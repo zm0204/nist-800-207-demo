@@ -42,7 +42,12 @@ def run(dashboard,pep):
                 if s['state']=='REVOKED': return s
                 time.sleep(.2)
             raise AssertionError('Continuous evaluation did not revoke within 8 seconds')
-        reset();sid=session();r=get(sid);assert r.status_code==200 and r.json()['resource']=='salary';results.append('1 Normal ALLOW -> real protected Resource')
+        reset();sid=session();r=get(sid)
+        if r.status_code!=200:
+            print('Normal request failure:',r.status_code,r.text)
+            print('Sanitized recent activity:',json.dumps(d.get('/view').json()['events'][:10]))
+        assert r.status_code==200 and r.json()['resource']=='salary'
+        results.append('1 Normal ALLOW -> real protected Resource')
         assert get(sid,method='POST').status_code==403;assert get(sid).status_code==200;results.append('2 Least privilege DENY')
         console('/simulate',{'action':'compromise'});assert revoked(sid)['last']['decision']=='REVOKE';assert get(sid).status_code==403;results.append('3 Compromise -> autonomous REVOKE -> PEP blocked')
         for action,label in [('high-risk-ip','4 High-risk IP'),('abnormal','5 Abnormal behavior')]:
