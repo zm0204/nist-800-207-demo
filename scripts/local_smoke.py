@@ -6,6 +6,7 @@ import socket
 import ssl
 import subprocess
 import sys
+import sysconfig
 import tempfile
 import time
 import httpx
@@ -35,14 +36,19 @@ def run():
         key=(root/'.env').read_text().splitlines()[0].split('=',1)[1]
         ports={name:port() for name in ['context','identity','pe','pa','dashboard','resource']}
         env={**os.environ,'SERVICE_KEY':key,'STATE_DIR':str(root/'state'),'CERT_DIR':str(root/'certs')}
+        # Avoid the Windows venv redirector spawning an extra child process.
+        # Use the real interpreter with this environment's package directory.
+        executable=sys._base_executable if os.name=='nt' else sys.executable
+        env['PYTHONPATH']=os.pathsep.join([str(ROOT),sysconfig.get_path('purelib')])
         env.update({name.upper()+'_URL':f'http://127.0.0.1:{p}' for name,p in ports.items()})
         try:
             for name in ['context','identity','pe','pa','dashboard','resource']:
                 log=open(root/(name+'.log'),'w',encoding='utf-8');logs.append(log)
-                args=[sys.executable,'-m','uvicorn','app.'+name+':app','--host','127.0.0.1','--port',str(ports[name]),'--no-access-log']
+                args=[executable,'-m','uvicorn','app.'+name+':app','--host','127.0.0.1','--port',str(ports[name]),'--no-access-log']
                 if name=='resource':
                     args+=['--ssl-keyfile',str(root/'certs/resource.key'),'--ssl-certfile',str(root/'certs/resource.crt'),
-                           '--ssl-ca-certs',str(root/'certs/upstream-client-ca.crt'),'--ssl-cert-reqs','2']
+                           '--ssl-ca-certs',str(root/'certs/upstream-client-ca.crt'),'--ssl-cert-reqs','2',
+                           '--ssl-ciphers','ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384']
                 processes.append(subprocess.Popen(args,cwd=ROOT,env=env,stdout=log,stderr=log))
                 if name!='resource': wait(env[name.upper()+'_URL'],key)
             with httpx.Client(timeout=5,trust_env=False) as c:
@@ -82,8 +88,9 @@ def run():
                 assert c.post(dash+'/simulate',json={'action':'reset'},headers={'Origin':'https://evil.example'}).status_code==403;checks.append('Dashboard rejects cross-origin mutation')
                 # Resource is temporarily bound locally ONLY in this test. Test
                 # cryptographic upstream protection separately from Docker port isolation.
-                for client_name,allowed in [('device-a',False),('pep-upstream',True)]:
+                for client_name,allowed,version in [('device-a',False,ssl.TLSVersion.TLSv1_3),('pep-upstream',True,ssl.TLSVersion.TLSv1_3),('pep-upstream',True,ssl.TLSVersion.TLSv1_2)]:
                     tls=ssl.create_default_context(cafile=str(root/'certs/service-ca.crt'))
+                    tls.maximum_version=version
                     tls.load_cert_chain(root/f'certs/{client_name}.crt',root/f'certs/{client_name}.key')
                     try:
                         with httpx.Client(verify=tls,trust_env=False,timeout=2) as rc:
@@ -91,7 +98,7 @@ def run():
                             assert allowed and r.status_code==200
                     except httpx.HTTPError:
                         assert not allowed
-                checks.append('Real upstream TLS accepts PEP certificate and rejects device certificate despite forged headers')
+                checks.append('Real upstream TLS 1.2 and 1.3 accept PEP certificate; device certificate with forged headers rejected')
             report={'mode':'local HTTP + TLS; Envoy and Docker NOT exercised','checks':checks,'passed':len(checks)}
             (artifacts/'local-smoke.json').write_text(json.dumps(report,indent=2),encoding='utf-8')
             print(json.dumps(report,indent=2))
