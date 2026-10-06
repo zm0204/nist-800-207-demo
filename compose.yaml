@@ -1,0 +1,96 @@
+name: nist-800-207-demo
+x-python: &python
+  build: .
+  environment: &environment
+    SERVICE_KEY: ${SERVICE_KEY:?Run python scripts/init.py first}
+    STATE_DIR: /state
+  restart: unless-stopped
+  healthcheck:
+    test: ["CMD", "python", "-c", "import os,urllib.request; r=urllib.request.Request('http://localhost:8000/health',headers={'x-service-key':os.environ['SERVICE_KEY']}); urllib.request.urlopen(r,timeout=2)"]
+    interval: 5s
+    timeout: 3s
+    retries: 20
+services:
+  context:
+    <<: *python
+    command: [uvicorn, app.context:app, --host, 0.0.0.0, --port, '8000', --no-access-log]
+    networks: [control]
+    volumes: [context-state:/state]
+  identity:
+    <<: *python
+    command: [uvicorn, app.identity:app, --host, 0.0.0.0, --port, '8000', --no-access-log]
+    networks: [control]
+    volumes: [identity-state:/state]
+  pe:
+    <<: *python
+    command: [uvicorn, app.pe:app, --host, 0.0.0.0, --port, '8000', --no-access-log]
+    networks: [control]
+    depends_on:
+      context: {condition: service_healthy}
+  pa:
+    <<: *python
+    command: [uvicorn, app.pa:app, --host, 0.0.0.0, --port, '8000', --no-access-log]
+    networks: [control]
+    volumes: [pa-state:/state]
+    depends_on:
+      pe: {condition: service_healthy}
+      identity: {condition: service_healthy}
+  resource:
+    <<: *python
+    environment:
+      <<: *environment
+      CALLBACK_URL: https://pep:9444
+    command: [uvicorn, app.resource:app, --host, 0.0.0.0, --port, '8000', --no-access-log, --ssl-keyfile, /certs/resource.key, --ssl-certfile, /certs/resource.crt, --ssl-ca-certs, /certs/upstream-client-ca.crt, --ssl-cert-reqs, '2']
+    networks: [data]
+    volumes:
+      - ./certs/resource.crt:/certs/resource.crt:ro
+      - ./certs/resource.key:/certs/resource.key:ro
+      - ./certs/upstream-client-ca.crt:/certs/upstream-client-ca.crt:ro
+      - ./certs/service-ca.crt:/certs/service-ca.crt:ro
+      - ./certs/resource-client.crt:/certs/resource-client.crt:ro
+      - ./certs/resource-client.key:/certs/resource-client.key:ro
+    healthcheck:
+      test: [CMD, python, -c, "import socket; socket.create_connection(('localhost',8000),2).close()"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+  pep:
+    image: envoyproxy/envoy:v1.33.2
+    environment:
+      ENVOY_UID: ${ENVOY_UID:-101}
+    command: [envoy, -c, /etc/envoy/envoy.yaml, --log-level, warning]
+    networks: [edge, control, data]
+    ports: ['127.0.0.1:8443:8443']
+    volumes:
+      - ./envoy/envoy.yaml:/etc/envoy/envoy.yaml:ro
+      - ./certs/pep.crt:/certs/pep.crt:ro
+      - ./certs/pep.key:/certs/pep.key:ro
+      - ./certs/device-ca.crt:/certs/device-ca.crt:ro
+      - ./certs/service-ca.crt:/certs/service-ca.crt:ro
+      - ./certs/pep-upstream.crt:/certs/pep-upstream.crt:ro
+      - ./certs/pep-upstream.key:/certs/pep-upstream.key:ro
+    depends_on:
+      pa: {condition: service_healthy}
+      resource: {condition: service_healthy}
+  dashboard:
+    <<: *python
+    environment:
+      <<: *environment
+      PEP_URL: https://pep:8443
+    networks: [edge, control]
+    ports: ['127.0.0.1:8080:8000']
+    volumes:
+      - ./certs/service-ca.crt:/certs/service-ca.crt:ro
+      - ./certs/device-a.crt:/certs/device-a.crt:ro
+      - ./certs/device-a.key:/certs/device-a.key:ro
+    depends_on:
+      pa: {condition: service_healthy}
+      pep: {condition: service_started}
+networks:
+  edge: {}
+  control: {internal: true}
+  data: {internal: true}
+volumes:
+  context-state: {}
+  identity-state: {}
+  pa-state: {}

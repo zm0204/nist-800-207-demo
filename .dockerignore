@@ -1,0 +1,9 @@
+.venv
+.tmp
+.git
+certs
+state
+artifacts
+__pycache__
+.pytest_cache
+.env

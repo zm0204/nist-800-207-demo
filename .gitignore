@@ -1,0 +1,10 @@
+.venv/
+.tmp/
+.pytest_cache/
+__pycache__/
+*.pyc
+.env
+certs/
+state/
+artifacts/
+*.db
