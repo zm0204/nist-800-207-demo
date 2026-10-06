@@ -1,0 +1,138 @@
+static_resources:
+  listeners:
+    - name: device_gateway
+      address: {socket_address: {address: 0.0.0.0, port_value: 8443}}
+      filter_chains:
+        - transport_socket:
+            name: envoy.transport_sockets.tls
+            typed_config:
+              '@type': type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.DownstreamTlsContext
+              require_client_certificate: true
+              common_tls_context:
+                tls_certificates:
+                  - certificate_chain: {filename: /certs/pep.crt}
+                    private_key: {filename: /certs/pep.key}
+                validation_context:
+                  trusted_ca: {filename: /certs/device-ca.crt}
+          filters:
+            - name: envoy.filters.network.http_connection_manager
+              typed_config:
+                '@type': type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
+                stat_prefix: pep
+                codec_type: AUTO
+                forward_client_cert_details: SANITIZE_SET
+                set_current_client_cert_details: {uri: true, subject: false}
+                use_remote_address: true
+                route_config:
+                  name: protected_routes
+                  virtual_hosts:
+                    - name: resource
+                      domains: ['*']
+                      routes:
+                        - match: {path: /session}
+                          route: {cluster: pa, timeout: 5s}
+                          typed_per_filter_config:
+                            envoy.filters.http.ext_authz:
+                              '@type': type.googleapis.com/envoy.extensions.filters.http.ext_authz.v3.ExtAuthzPerRoute
+                              disabled: true
+                        - match: {prefix: /api/}
+                          route: {cluster: resource, timeout: 0s}
+                        - match: {prefix: /}
+                          direct_response: {status: 404}
+                http_filters:
+                  - name: envoy.filters.http.lua
+                    typed_config:
+                      '@type': type.googleapis.com/envoy.extensions.filters.http.lua.v3.Lua
+                      inline_code: |
+                        function envoy_on_request(handle)
+                          handle:headers():remove("x-zta-subject")
+                          handle:headers():remove("x-zta-session")
+                        end
+                  - name: envoy.filters.http.ext_authz
+                    typed_config:
+                      '@type': type.googleapis.com/envoy.extensions.filters.http.ext_authz.v3.ExtAuthz
+                      failure_mode_allow: false
+                      status_on_error: {code: ServiceUnavailable}
+                      http_service:
+                        server_uri: {uri: http://pa:8000, cluster: pa, timeout: 3s}
+                        path_prefix: /check
+                        authorization_request:
+                          allowed_headers:
+                            patterns:
+                              - {exact: authorization}
+                              - {exact: x-forwarded-client-cert}
+                        authorization_response:
+                          allowed_upstream_headers:
+                            patterns:
+                              - {exact: x-zta-subject}
+                              - {exact: x-zta-session}
+                  - name: envoy.filters.http.router
+                    typed_config:
+                      '@type': type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
+    - name: resource_control_callback
+      address: {socket_address: {address: 0.0.0.0, port_value: 9444}}
+      filter_chains:
+        - transport_socket:
+            name: envoy.transport_sockets.tls
+            typed_config:
+              '@type': type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.DownstreamTlsContext
+              require_client_certificate: true
+              common_tls_context:
+                tls_certificates:
+                  - certificate_chain: {filename: /certs/pep.crt}
+                    private_key: {filename: /certs/pep.key}
+                validation_context:
+                  trusted_ca: {filename: /certs/service-ca.crt}
+                  match_typed_subject_alt_names:
+                    - san_type: URI
+                      matcher: {exact: 'urn:zta:service:resource'}
+          filters:
+            - name: envoy.filters.network.http_connection_manager
+              typed_config:
+                '@type': type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
+                stat_prefix: resource_callback
+                route_config:
+                  name: callback
+                  virtual_hosts:
+                    - name: pa_status
+                      domains: ['*']
+                      routes:
+                        - match: {prefix: /status/}
+                          route: {cluster: pa, timeout: 3s}
+                        - match: {prefix: /}
+                          direct_response: {status: 403}
+                http_filters:
+                  - name: envoy.filters.http.router
+                    typed_config:
+                      '@type': type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
+  clusters:
+    - name: pa
+      type: STRICT_DNS
+      connect_timeout: 2s
+      load_assignment:
+        cluster_name: pa
+        endpoints:
+          - lb_endpoints:
+              - endpoint: {address: {socket_address: {address: pa, port_value: 8000}}}
+    - name: resource
+      type: STRICT_DNS
+      connect_timeout: 2s
+      load_assignment:
+        cluster_name: resource
+        endpoints:
+          - lb_endpoints:
+              - endpoint: {address: {socket_address: {address: resource, port_value: 8000}}}
+      transport_socket:
+        name: envoy.transport_sockets.tls
+        typed_config:
+          '@type': type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext
+          sni: resource
+          common_tls_context:
+            tls_certificates:
+              - certificate_chain: {filename: /certs/pep-upstream.crt}
+                private_key: {filename: /certs/pep-upstream.key}
+            validation_context:
+              trusted_ca: {filename: /certs/service-ca.crt}
+              match_typed_subject_alt_names:
+                - san_type: DNS
+                  matcher: {exact: resource}
