@@ -40,7 +40,7 @@ services:
     environment:
       <<: *environment
       CALLBACK_URL: https://pep:9444
-    command: [uvicorn, app.resource:app, --host, 0.0.0.0, --port, '8000', --no-access-log, --ssl-keyfile, /certs/resource.key, --ssl-certfile, /certs/resource.crt, --ssl-ca-certs, /certs/upstream-client-ca.crt, --ssl-cert-reqs, '2']
+    command: [uvicorn, app.resource:app, --host, 0.0.0.0, --port, '8000', --no-access-log, --ssl-keyfile, /certs/resource.key, --ssl-certfile, /certs/resource.crt, --ssl-ca-certs, /certs/upstream-client-ca.crt, --ssl-cert-reqs, '2', --ssl-ciphers, 'ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384']
     networks: [data]
     volumes:
       - ./certs/resource.crt:/certs/resource.crt:ro
