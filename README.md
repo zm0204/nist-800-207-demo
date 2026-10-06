@@ -27,20 +27,20 @@ Linux/macOS：使用 `.venv/bin/python` 取代 `.\.venv\Scripts\python.exe`，�
 ## 展示流程
 
 1. 點 **建立 Passkey**，完成瀏覽器 enrollment。alice 只允許首次註冊，避免其他人覆蓋公鑰。這是本機 demo bootstrap，不代表 production 身分核驗。
-2. 點 **使用 Passkey 驗證**。Identity 真正檢查 challenge、origin、RP ID、UV、signature、counter；發出 15 分鐘 human token。
-3. Resource 選 `/api/salary`，點 **建立 Session**，再 **正常 GET**。Agent 經 device-a mTLS → Envoy → PA → PE；ALLOW 後才轉送 Resource。
-4. 看 Subject、Device、Request、Context、Trust Score、PE Decision、PA Action、PEP State 及右侧日志。
+2. 點 **驗證身分**。Identity 真正檢查 challenge、origin、RP ID、UV、signature、counter；發出 15 分鐘 human token。
+3. Resource 選 `/api/salary`，點 **建立 Session**，再 **正常存取**。Agent 經 device-a mTLS → Envoy → PA → PE；ALLOW 後才轉送 Resource。
+4. 主畫面顯示信任分數、中文判斷原因、PE / PA / PEP 狀態。越權與串流操作在「進階存取操作」，政策設定在「動態政策與流量測試」，環境欄位在「請求與環境詳細資訊」。看 Subject、Device、Request、Context、Trust Score、PE Decision、PA Action、PEP State 及右侧日志。
 
 | 情境 | 操作 | 預期 |
 |---|---|---|
-| 1 正常 | Reset Signals → 建立 Session → GET | trust100、ALLOW、AUTHORIZE_REQUEST、FORWARD、Resource200 |
+| 1 正常 | 重設訊號 → 建立 Session → GET | trust100、ALLOW、AUTHORIZE_REQUEST、FORWARD、Resource200 |
 | 2 Least privilege | 已有 salary GET session → POST /salary | DENY_REQUEST / 403；原 GET scope 仍可用 |
 | 3 Compromised device | 正常 session → Compromise Device，等待重評估 → GET | PE REVOKE、PA REVOKE_SESSION、PEP BLOCKED / 403 |
 | 4 High-risk IP | Reset → 新 session → High-risk IP | risk70、trust30、REVOKE；新 session DENY |
 | 5 Abnormal behavior | Reset → 新 session → Abnormal Traffic，或送出14次請求 | risk60、trust40、REVOKE；真實請求達12次/10秒也觸發 |
 | 6 Bypass PEP | 跑 `scripts/verify.py` 網路探測，檢查 compose ports | Resource 無 host port、agent 不在 data network、直接連線失敗 |
 
-Reset Signals 只重設訊號、政策與 demo history，**不會復活撤銷的 session**。每次風險情境前重設並新建 session。Outdated OS 扣30分、trust70，門檻60仍 ALLOW；把門檻改80再更新 Policy 即撤銷。移除 Alice 權限展示 dynamic least privilege policy。Revoke Session 是管理者主動撤銷。
+重設訊號 只重設訊號、政策與 demo history，**不會復活撤銷的 session**。每次風險情境前重設並新建 session。Outdated OS 扣30分、trust70，門檻60仍 ALLOW；把門檻改80再更新 Policy 即撤銷。移除 Alice 權限展示 dynamic least privilege policy。Revoke Session 是管理者主動撤銷。
 
 持續存取：Resource 選 `/api/stream` → 建立 Session → 開啟持續串流 → Compromise Device 或 Revoke Session。串流發出 revoked event 後終止；已完成的 HTTP 回應無法追回。背景重評估每輪後等1秒，實際延遲還包括服務回應與 session 數量，非硬性1秒保證。
 
@@ -109,3 +109,4 @@ docker compose -p zta-verification down -v
 這是可執行的教學架構，非NIST認證/完整企業部署。首次enrollment、模擬CDM/threat signals與localhost管理console有意簡化。Control plane在internal Docker network用random service key進行HTTP，production應使用服務mTLS、真正IdP/enrollment/admin授權、credential recovery/rotation、HA、受保護集中式log与real feeds。Docker network隔離不限制擁有Docker daemon/root權限的host管理員；他們屬本示範信任邊界之外。
 
 [NIST SP 800-207 原文](https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-207.pdf) §3.1、§3.2.1、§3.3；Risk weights和threshold是本專案策略，不是標準規定。
+
