@@ -2,7 +2,7 @@
 
 以 **SP 800-207 本身**為藍本的 Device Agent/Gateway 展示，非 800-207A service mesh。Human 用 Passkey/WebAuthn、Device 用 X.509/mTLS；PDP = 分開的 PE + PA，Envoy 是 gateway PEP。
 
-> 驗證狀態見 [docs/verification.md](docs/verification.md)。本機沒有 Docker，因此不能把本機單元/HTTP 測試當成 Compose 已成功的證明。GitHub Actions workflow 會實際啟動 Docker/Envoy 並跑六個情境，結果以該次 CI run 為準。
+> **實際 Docker 驗證已通過**：[GitHub Actions Run #3](https://github.com/zm0204/nist-800-207-demo/actions/runs/37464773674)，包含 Compose 啟動、真正 Envoy/mTLS 與六個展示情境，另外驗證憑證綁定、串流撤銷與 PE 停機 fail closed。34 個本機測試也通過。詳細證據见 [docs/verification.md](docs/verification.md)。
 
 ## 快速啟動（Windows / Linux / macOS）
 
