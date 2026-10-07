@@ -12,6 +12,7 @@ import ssl
 import subprocess
 import sys
 import time
+from threading import Event
 import httpx
 ROOT=Path(__file__).resolve().parents[1];sys.path.insert(0,str(ROOT))
 from tests.authenticator import Authenticator
@@ -73,15 +74,23 @@ def run(dashboard,pep):
         assert get('invented',extra={'x-zta-subject':'alice','x-zta-session':sid}).status_code==403
         results.append('Certificate/session binding, forged XFCC and missing certificate rejected')
         reset();sid=session('/api/stream')
+        stream_ready=Event()
         def observe_stream():
             with tls_client() as stream_client:
                 with stream_client.stream('GET',pep+'/api/stream',headers={'authorization':'Bearer '+sid},timeout=12) as r:
                     assert r.status_code==200
-                    text='\n'.join(r.iter_lines())
+                    lines=[]
+                    for line in r.iter_lines():
+                        lines.append(line)
+                        if line=='event: resource': stream_ready.set()
+                    text='\n'.join(lines)
                     assert 'event: resource' in text and 'event: revoked' in text
                     return text
         with ThreadPoolExecutor(max_workers=1) as executor:
-            future=executor.submit(observe_stream);time.sleep(1.5)
+            future=executor.submit(observe_stream)
+            if not stream_ready.wait(timeout=12):
+                if future.done(): future.result()
+                raise AssertionError('Resource stream did not become active before revocation')
             console('/simulate',{'action':'compromise'});future.result(timeout=15)
         results.append('Active SSE resource stream closes after continuous REVOKE')
         reset();sid=session();subprocess.run(['docker','compose','stop','pe'],cwd=ROOT,check=True,capture_output=True)
