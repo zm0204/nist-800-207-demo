@@ -49,6 +49,19 @@ def run(dashboard,pep):
             print('Sanitized recent activity:',json.dumps(d.get('/view').json()['events'][:10]))
         assert r.status_code==200 and r.json()['resource']=='salary'
         results.append('1 Normal ALLOW -> real protected Resource')
+        assert get(sid,path='/api/profile').status_code==403
+        v=d.get('/view').json();s=next(s for s in v['sessions'] if s['session_id']==sid)
+        action=s['last_action']
+        assert s['state']=='ACTIVE' and action['policy_evaluation']['decision']=='ALLOW'
+        assert action['pa_action']=='DENY_REQUEST' and action['pa_reason']=='session_scope_mismatch'
+        assert action['pdp_decision']=='DENY' and action['pep_state']=='BLOCKED' and action['http_status']==403
+        event=next(e for e in v['events'] if e.get('action_id')==action['action_id'] and e['kind']=='pa_action')
+        assert event['session_ref']==s['session_ref'] and event['decision']=='ALLOW'
+        time.sleep(1.2)  # Allow a periodic PE evaluation to run.
+        s=next(s for s in d.get('/view').json()['sessions'] if s['session_id']==sid)
+        assert s['state']=='ACTIVE' and s['last_action']==action
+        assert get(sid).status_code==200
+        results.append('Scope mismatch: PE ALLOW / PA DENY_REQUEST / 403 BLOCKED; background tick preserves action and salary still succeeds')
         assert get(sid,method='POST').status_code==403;assert get(sid).status_code==200;results.append('2 Least privilege DENY')
         console('/simulate',{'action':'compromise'});assert revoked(sid)['last']['decision']=='REVOKE';assert get(sid).status_code==403;results.append('3 Compromise -> autonomous REVOKE -> PEP blocked')
         for action,label in [('high-risk-ip','4 High-risk IP'),('abnormal','5 Abnormal behavior')]:
@@ -73,6 +86,10 @@ def run(dashboard,pep):
             else:raise AssertionError('mTLS accepted a connection without client certificate: '+str(r.status_code))
         assert get('invented',extra={'x-zta-subject':'alice','x-zta-session':sid}).status_code==403
         results.append('Certificate/session binding, forged XFCC and missing certificate rejected')
+        console('/revoke',{'session_id':sid});s=revoked(sid)
+        assert s['last_action']['operation']=='administrator' and s['last_action']['policy_evaluation'] is None
+        assert get(sid).status_code==403
+        results.append('Manual REVOKE is a PA action, not a fabricated PE decision')
         reset();sid=session('/api/stream')
         stream_ready=Event()
         def observe_stream():
@@ -94,7 +111,17 @@ def run(dashboard,pep):
             console('/simulate',{'action':'compromise'});future.result(timeout=15)
         results.append('Active SSE resource stream closes after continuous REVOKE')
         reset();sid=session();subprocess.run(['docker','compose','stop','pe'],cwd=ROOT,check=True,capture_output=True)
-        try:assert get(sid).status_code in (403,503);revoked(sid)
+        try:
+            assert get(sid).status_code in (403,503)
+            s=revoked(sid)
+            assert s['last_action']['policy_evaluation'] is None
+            assert s['last']['reasons']==['control_plane_unavailable']
+            assert s['last_action']['pep_state']=='BLOCKED'
+            # Background fail-closed can revoke before get(): that request then
+            # truthfully reports session_revoked, not a fresh PE outage decision.
+            action=s['last_action']
+            assert action['pa_reason']==('session_revoked' if action['pa_action']=='DENY_REQUEST'
+                                         else 'control_plane_unavailable')
         finally:subprocess.run(['docker','compose','start','pe'],cwd=ROOT,check=True,capture_output=True)
         results.append('PE unavailable -> fail closed, session revoked')
     report={'mode':'Actual Docker Compose + Envoy + mTLS','passed':len(results),'checks':results}

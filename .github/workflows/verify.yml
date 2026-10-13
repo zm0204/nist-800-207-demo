@@ -18,6 +18,11 @@ jobs:
         run: python -m pip install -r requirements-dev.txt
       - name: Unit and service integration tests
         run: python -m pytest -q
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Dashboard decision rendering tests
+        run: node --test tests/test_ui_decisions.cjs
       - name: Generate local-only PKI
         run: python scripts/init.py
       - name: Compose configuration and Envoy validation
