@@ -8,7 +8,7 @@ async function api(path,body,method='POST'){
 const decode=s=>Uint8Array.from(atob(s.replace(/-/g,'+').replace(/_/g,'/')+'='.repeat((4-s.length%4)%4)),c=>c.charCodeAt(0));
 const encode=b=>btoa(String.fromCharCode(...new Uint8Array(b))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
 async function passkey(kind){
-  if(!window.PublicKeyCredential)throw new Error('請使用支援 WebAuthn 的 Chrome / Edge，網址需為 http://localhost:8080');
+  if(!window.PublicKeyCredential||!window.isSecureContext)throw new Error('請使用支援 WebAuthn 的 Chrome / Edge，以及設定好的 HTTPS 展示網址或 localhost');
   const o=await api('/identity/'+kind+'/options',{}),p=o.publicKey;
   p.challenge=decode(p.challenge);
   if(p.user)p.user.id=decode(p.user.id);
@@ -96,3 +96,11 @@ function renderEvents(events){
 }
 for(const link of document.querySelectorAll('.nav-item'))link.addEventListener('click',()=>{for(const other of document.querySelectorAll('.nav-item'))other.classList.toggle('active',other===link);});
 refresh();setInterval(refresh,1500);
+fetch('/client-config').then(r=>r.json()).then(c=>{
+  if(!c.stream_enabled){
+    $('stream').disabled=true;
+    $('stream').textContent='臨時 HTTPS 通道不支援串流';
+    const option=$('path').querySelector('option[value="/api/stream"]');
+    if(option)option.disabled=true;
+  }
+}).catch(()=>{});
