@@ -12,11 +12,13 @@ Dashboard 的 PDP 標籤顯示 PE + PA 的整體授權結果，另列 PE 政策�
 
 本機 Windows／Docker Desktop 驗證：
 
-- `python -m pytest -q`：**41 passed**；仍有一項既有 Starlette/AnyIO deprecation warning。
+- `python -m pytest -q`：**42 passed**；仍有一項既有 Starlette/AnyIO deprecation warning。
 - `node --test tests/test_ui_decisions.cjs`：**9 passed**；CI 同步執行此測試。
 - `node --check static/app.js`、`git diff --check`：通過。
 - `scripts/verify.py`：獨立 Docker Compose + 真實 Envoy + mTLS，**11 groups passed**，涵蓋 scope mismatch／背景 tick／Salary 恢復、政策 DENY、背景與手動 REVOKE、SSE 撤銷、PE 停機 fail closed、憑證綁定與 Resource 隔離。
 - 真實 Edge 使用測試用虛擬 WebAuthn 認證器操作 Dashboard：Passkey、ALLOW、scope mismatch、Salary 恢復、policy DENY、手動／背景撤銷通過；1440px 桌面與390px手機畫面已檢視，無水平溢出或前端例外。瀏覽器保留設定的 localhost:8080 origin，測試路由將所有流量轉至隔離環境，不操作既有展示服務。
+
+CI 補驗捕捉到 PE 停機的兩種合法順序：請求先遇到 outage 而撤銷，或背景先撤銷、後續請求回報 `session_revoked`。整合測試分別核對持續撤銷原因與最近動作；新增 deterministic regression，避免把背景原因強加給後續請求。
 
 以下為先前版本的歷史驗證紀錄。
 

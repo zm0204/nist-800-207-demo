@@ -115,7 +115,13 @@ def run(dashboard,pep):
             assert get(sid).status_code in (403,503)
             s=revoked(sid)
             assert s['last_action']['policy_evaluation'] is None
-            assert s['last_action']['pa_reason']=='control_plane_unavailable'
+            assert s['last']['reasons']==['control_plane_unavailable']
+            assert s['last_action']['pep_state']=='BLOCKED'
+            # Background fail-closed can revoke before get(): that request then
+            # truthfully reports session_revoked, not a fresh PE outage decision.
+            action=s['last_action']
+            assert action['pa_reason']==('session_revoked' if action['pa_action']=='DENY_REQUEST'
+                                         else 'control_plane_unavailable')
         finally:subprocess.run(['docker','compose','start','pe'],cwd=ROOT,check=True,capture_output=True)
         results.append('PE unavailable -> fail closed, session revoked')
     report={'mode':'Actual Docker Compose + Envoy + mTLS','passed':len(results),'checks':results}

@@ -126,6 +126,22 @@ def test_device_denial_does_not_resurrect_concurrent_revoke(stack,monkeypatch):
     assert check(pc,sid,cert='URI=urn:zta:device:device-b').status_code==403
     assert status(pc,sid)['state']=='REVOKED'
 
+def test_background_fail_closed_then_request_reports_session_revoked(stack,monkeypatch):
+    pc,cc,token,pa=stack; sid=create(pc,token).json()['session_id']
+    original=pa.call
+    async def down(base,*args,**kwargs):
+        if base==pa.url('pe'): raise httpx.ConnectError('PE offline')
+        return await original(base,*args,**kwargs)
+    monkeypatch.setattr(pa,'call',down)
+    import asyncio
+    asyncio.run(pa.reevaluate_all())
+    assert status(pc,sid)['last_action']['pa_reason']=='control_plane_unavailable'
+    assert check(pc,sid).status_code==403
+    s=status(pc,sid)
+    assert s['state']=='REVOKED' and s['last']['reasons']==['control_plane_unavailable']
+    assert s['last_action']['pa_reason']=='session_revoked'
+    assert s['last_action']['policy_evaluation'] is None and s['last_action']['pep_state']=='BLOCKED'
+
 def test_wrong_device_attempts_do_not_trigger_authenticated_request_rate(stack):
     pc,cc,token,pa=stack; sid=create(pc,token).json()['session_id']
     for _ in range(12):
