@@ -1,5 +1,25 @@
 # 驗證紀錄
 
+## 2026-10-13：Dashboard 決策語義與請求對應
+
+Dashboard 的 PDP 標籤顯示 PE + PA 的整體授權結果，另列 PE 政策決策、PA Session 授權與原因、PEP 執行結果。Salary Session 請求 Profile 時保留真實的 PE `ALLOW`，PA 顯示 `DENY_REQUEST`／`Session Scope Mismatch`，整體為 `DENY`／`403 BLOCKED`；原 Session 維持 `ACTIVE`，後續 Salary 仍成功。`app/trust.py` 的政策評估邏輯未修改。
+
+每個 PA 動作保存 `action_id`、`operation`、`session_ref`、請求與授權範圍、`policy_evaluation`、`pa_reason`、`pdp_decision`、`pep_state`。事件的舊 `decision` 欄位仍代表真正的 PE 結果；手動／fail-closed 撤銷的 `policy_evaluation` 是 `null`，不宣稱 PE 回傳 REVOKE。Session 的舊 `last` 保留既有狀態／callback 相容性，不能當作最近請求結果。
+
+主畫面從目前 Session 的 `last_action` 讀取完整動作，`last_request_action` 另保存最近資源請求。背景 ALLOW 只更新持續評估，不取代動作；背景撤銷明確標示來源，保留最近請求。其他 Session 的事件與最近 100 筆事件的保留上限不影響主畫面。舊 Session 在產生新動作前顯示缺少可對應紀錄；控制平面失聯時明確標示為上次紀錄。
+
+`http_status` 是 **PA 授權回應**，`200 FORWARD` 只表示允許轉送，實際資源 HTTP 由「資源回應」顯示。背景／管理者撤銷沒有請求 HTTP。被拒絕的裝置／已撤銷 Session 嘗試使用 `request_rejected` 事件，不增加既有已授權請求流量訊號。活動紀錄仍不保存 bearer secrets。
+
+本機 Windows／Docker Desktop 驗證：
+
+- `python -m pytest -q`：**41 passed**；仍有一項既有 Starlette/AnyIO deprecation warning。
+- `node --test tests/test_ui_decisions.cjs`：**9 passed**；CI 同步執行此測試。
+- `node --check static/app.js`、`git diff --check`：通過。
+- `scripts/verify.py`：獨立 Docker Compose + 真實 Envoy + mTLS，**11 groups passed**，涵蓋 scope mismatch／背景 tick／Salary 恢復、政策 DENY、背景與手動 REVOKE、SSE 撤銷、PE 停機 fail closed、憑證綁定與 Resource 隔離。
+- 真實 Edge 使用測試用虛擬 WebAuthn 認證器操作 Dashboard：Passkey、ALLOW、scope mismatch、Salary 恢復、policy DENY、手動／背景撤銷通過；1440px 桌面與390px手機畫面已檢視，無水平溢出或前端例外。瀏覽器保留設定的 localhost:8080 origin，測試路由將所有流量轉至隔離環境，不操作既有展示服務。
+
+以下為先前版本的歷史驗證紀錄。
+
 日期：2026-10-06（Asia/Taipei）。實際 Docker/Envoy 已在 GitHub Actions Linux runner 驗證通過。
 
 ## 實際 Docker / Envoy 證據
