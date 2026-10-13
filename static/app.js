@@ -1,8 +1,12 @@
 let humanToken='', sessionId='', streamController=null;
 const $=id=>document.getElementById(id);
-const show=value=>{$('result').textContent=typeof value==='string'?value:JSON.stringify(value,null,2);};
+const show=value=>{$('result').textContent=typeof value==='string'?value:JSON.stringify(value,null,2);if(typeof value==='string'&&value)$('result').scrollIntoView({block:'center'});};
 async function api(path,body,method='POST'){
   const r=await fetch(path,{method,headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  if(!r.headers.get('content-type')?.includes('application/json')){
+    if(r.status===401)throw new Error('遠端入口驗證已失效（HTTP 401）。操作沒有完成。若 Email 登入後幾秒又失效，屬於 Cloudflare protected Quick Tunnel 已知問題，請改用本機展示或固定通道。');
+    throw new Error(`入口或伺服器未回傳 API 資料（HTTP ${r.status}），請確認控制平面連線。`);
+  }
   const data=await r.json(); if(!r.ok)throw new Error(JSON.stringify(data)); return data;
 }
 const decode=s=>Uint8Array.from(atob(s.replace(/-/g,'+').replace(/_/g,'/')+'='.repeat((4-s.length%4)%4)),c=>c.charCodeAt(0));
