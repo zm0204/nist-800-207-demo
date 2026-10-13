@@ -14,6 +14,7 @@ if(!(Test-Path -LiteralPath $Cloudflared)){throw 'Download official cloudflared 
 if(!(Test-Path -LiteralPath $Docker)){throw 'Docker executable not found.'}
 $taskHelp=& $Cloudflared tunnel --help 2>&1
 if(($taskHelp -join "`n") -notmatch '\-\-allowed-mail'){throw 'This cloudflared does not support protected Quick Tunnels. Refusing to publish.'}
+Write-Warning 'Experimental: protected Quick Tunnel sessions may expire seconds after email login (cloudflare/cloudflared#1752). Do not use for a presentation until browser verification passes. See docs/remote.md.'
 & $Docker info --format '{{.ServerVersion}}' | Out-Null
 if($LASTEXITCODE -ne 0){throw 'Start Docker Desktop first.'}
 if(Test-Path (Join-Path $taskWork 'active.json')){throw 'A remote run is recorded. Stop it with remote-stop.ps1 first.'}
