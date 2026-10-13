@@ -1,5 +1,9 @@
 # NIST SP 800-207 Zero Trust Architecture Demo
 
+## 實驗室筆電免安裝展示
+
+新增 [受 Email 保護的臨時 HTTPS 模式](docs/remote.md)。原電腦跑 Docker，實驗室只開瀏覽器；使用獨立資料庫，不改 localhost 資料。啟動：`./scripts/remote-start.ps1 -AllowedEmail 'your-email@example.com'`；停止：`./scripts/remote-stop.ps1`。臨時網址每次變動，需新 Passkey；Quick Tunnel 不支援 SSE，遠端模式明確停用串流。
+
 以 **SP 800-207 本身**為藍本的 Device Agent/Gateway 展示，非 800-207A service mesh。Human 用 Passkey/WebAuthn、Device 用 X.509/mTLS；PDP = 分開的 PE + PA，Envoy 是 gateway PEP。
 
 > **實際 Docker 驗證已通過**：[GitHub Actions Run #3](https://github.com/zm0204/nist-800-207-demo/actions/runs/37464773674)，包含 Compose 啟動、真正 Envoy/mTLS 與六個展示情境，另外驗證憑證綁定、串流撤銷與 PE 停機 fail closed。34 個本機測試也通過。詳細證據见 [docs/verification.md](docs/verification.md)。
