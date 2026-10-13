@@ -9,16 +9,18 @@ from fastapi.staticfiles import StaticFiles
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 from pydantic import BaseModel
 from app.common import call, url
+from app.web_config import web_config
 
 app=FastAPI(title='800-207 Dashboard / Device Agent')
-app.add_middleware(TrustedHostMiddleware,allowed_hosts=['localhost','127.0.0.1','testserver'])
+CONFIG=web_config()
+app.add_middleware(TrustedHostMiddleware,allowed_hosts=list(dict.fromkeys(['localhost','127.0.0.1','testserver',CONFIG['host']])))
 STATIC=Path(__file__).resolve().parents[1]/'static'
 app.mount('/static',StaticFiles(directory=STATIC),name='static')
 
 @app.middleware('http')
 async def local_console(request:Request,call_next):
     origin=request.headers.get('origin')
-    expected=os.environ.get('WEBAUTHN_ORIGIN','http://localhost:8080')
+    expected=CONFIG['origin']
     if origin and origin!=expected: return JSONResponse({'detail':'cross-origin console request rejected'},403)
     if request.method in ('POST','PUT','PATCH','DELETE') and not request.headers.get('content-type','').startswith('application/json'):
         return JSONResponse({'detail':'application/json required'},415)
@@ -33,6 +35,10 @@ def index(): return FileResponse(STATIC/'index.html')
 
 @app.get('/health')
 def health(): return {'ok':True}
+
+@app.get('/client-config')
+def client_config():
+    return {'stream_enabled':CONFIG['stream_enabled'],'remote':CONFIG['rp']!='localhost'}
 
 @app.post('/identity/{operation:path}')
 async def identity(operation:str,request:Request):
@@ -82,6 +88,8 @@ async def access(body:Access):
 
 @app.post('/agent/stream')
 async def stream(body:Access):
+    if not CONFIG['stream_enabled']:
+        raise HTTPException(409,'Temporary HTTPS tunnel does not support SSE; use local demo or a named tunnel')
     async def relay():
         async with agent_client() as client:
             async with client.stream('GET',PEP+'/api/stream',headers={'authorization':'Bearer '+body.session_id},timeout=None) as r:

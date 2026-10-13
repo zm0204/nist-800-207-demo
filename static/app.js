@@ -1,14 +1,18 @@
 let humanToken='', sessionId='', streamController=null;
 const $=id=>document.getElementById(id);
-const show=value=>{$('result').textContent=typeof value==='string'?value:JSON.stringify(value,null,2);};
+const show=value=>{$('result').textContent=typeof value==='string'?value:JSON.stringify(value,null,2);if(typeof value==='string'&&value)$('result').scrollIntoView({block:'center'});};
 async function api(path,body,method='POST'){
   const r=await fetch(path,{method,headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  if(!r.headers.get('content-type')?.includes('application/json')){
+    if(r.status===401)throw new Error('遠端入口驗證已失效（HTTP 401）。操作沒有完成。若 Email 登入後幾秒又失效，屬於 Cloudflare protected Quick Tunnel 已知問題，請改用本機展示或固定通道。');
+    throw new Error(`入口或伺服器未回傳 API 資料（HTTP ${r.status}），請確認控制平面連線。`);
+  }
   const data=await r.json(); if(!r.ok)throw new Error(JSON.stringify(data)); return data;
 }
 const decode=s=>Uint8Array.from(atob(s.replace(/-/g,'+').replace(/_/g,'/')+'='.repeat((4-s.length%4)%4)),c=>c.charCodeAt(0));
 const encode=b=>btoa(String.fromCharCode(...new Uint8Array(b))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
 async function passkey(kind){
-  if(!window.PublicKeyCredential)throw new Error('請使用支援 WebAuthn 的 Chrome / Edge，網址需為 http://localhost:8080');
+  if(!window.PublicKeyCredential||!window.isSecureContext)throw new Error('請使用支援 WebAuthn 的 Chrome / Edge，以及設定好的 HTTPS 展示網址或 localhost');
   const o=await api('/identity/'+kind+'/options',{}),p=o.publicKey;
   p.challenge=decode(p.challenge);
   if(p.user)p.user.id=decode(p.user.id);
@@ -96,3 +100,11 @@ function renderEvents(events){
 }
 for(const link of document.querySelectorAll('.nav-item'))link.addEventListener('click',()=>{for(const other of document.querySelectorAll('.nav-item'))other.classList.toggle('active',other===link);});
 refresh();setInterval(refresh,1500);
+fetch('/client-config').then(r=>r.json()).then(c=>{
+  if(!c.stream_enabled){
+    $('stream').disabled=true;
+    $('stream').textContent='臨時 HTTPS 通道不支援串流';
+    const option=$('path').querySelector('option[value="/api/stream"]');
+    if(option)option.disabled=true;
+  }
+}).catch(()=>{});

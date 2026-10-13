@@ -1,0 +1,16 @@
+# Used only by scripts/remote-start.ps1 with a generated private env file.
+# A distinct Compose project gives each temporary RP its own identity/session DB.
+services:
+  identity:
+    environment:
+      RP_ID: ${REMOTE_RP_ID:?Use remote-start.ps1}
+      WEBAUTHN_ORIGIN: ${REMOTE_ORIGIN:?Use remote-start.ps1}
+  dashboard:
+    command: [uvicorn, app.dashboard:app, --host, 0.0.0.0, --port, '8000']
+    environment:
+      RP_ID: ${REMOTE_RP_ID:?Use remote-start.ps1}
+      WEBAUTHN_ORIGIN: ${REMOTE_ORIGIN:?Use remote-start.ps1}
+      STREAM_ENABLED: 'false'
+    ports: !override ['127.0.0.1:8081:8000']
+  pep:
+    ports: !reset []
