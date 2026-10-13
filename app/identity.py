@@ -12,10 +12,12 @@ from webauthn.helpers import options_to_json
 from webauthn.helpers.structs import (AuthenticatorSelectionCriteria, UserVerificationRequirement,
                                      PublicKeyCredentialDescriptor)
 from app.common import db, protected
+from app.web_config import web_config
 
 app=FastAPI(title='Passwordless Identity / WebAuthn')
-RP=os.environ.get('RP_ID','localhost')
-ORIGIN=os.environ.get('WEBAUTHN_ORIGIN','http://localhost:8080')
+CONFIG=web_config()
+RP=CONFIG['rp']
+ORIGIN=CONFIG['origin']
 TOKEN_TTL=int(os.environ.get('TOKEN_TTL','900'))
 
 def initialize():
