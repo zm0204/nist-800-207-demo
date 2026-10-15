@@ -8,6 +8,8 @@ spec:
     accessLogEncoding: JSON
     defaultConfig:
       holdApplicationUntilProxyStarts: true
+      proxyMetadata:
+        SECRET_TTL: 1h
     extensionProviders:
       - name: workload-pe
         envoyExtAuthzGrpc:

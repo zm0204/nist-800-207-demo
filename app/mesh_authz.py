@@ -1,6 +1,7 @@
 """Opt-in Envoy v3 gRPC adapter to the existing PE's workload endpoint.
 
-Only trusted destination sidecars may reach this server (Istio ALLOW policy).
+Istio ALLOW trusts the destination backend Pods/ServiceAccounts, including their
+application processes. Native data-plane ALLOW remains required independently.
 An application-provided XFCC/subject header is never a workload identity source.
 """
 import asyncio

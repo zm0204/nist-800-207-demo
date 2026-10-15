@@ -36,6 +36,27 @@ except httpx.HTTPError as e:
 '''
 
 
+def has_sidecar(pod):
+    spec = pod['spec']
+    return any(c['name'] == 'istio-proxy' for c in spec.get('containers', [])) or any(
+        c['name'] == 'istio-proxy' and c.get('restartPolicy') == 'Always'
+        for c in spec.get('initContainers', []))
+
+
+def certificate_evidence(pem, expected):
+    cert = x509.load_pem_x509_certificate(pem)
+    uris = cert.extensions.get_extension_for_class(x509.SubjectAlternativeName).value.get_values_for_type(x509.UniformResourceIdentifier)
+    now = datetime.now(timezone.utc)
+    lifetime = (cert.not_valid_after_utc - cert.not_valid_before_utc).total_seconds()
+    # Istiod backdates NotBefore; allow up to five minutes of issuer clock tolerance.
+    if expected not in uris or not cert.not_valid_before_utc <= now < cert.not_valid_after_utc:
+        raise AssertionError('Missing or invalid workload identity: ' + expected)
+    if not 3600 <= lifetime <= 3900:
+        raise AssertionError(f'Expected one-hour workload certificate, observed {lifetime} seconds')
+    return {'uri': expected, 'not_before': cert.not_valid_before_utc.isoformat(),
+            'not_after': cert.not_valid_after_utc.isoformat(), 'lifetime_seconds': lifetime}
+
+
 def run(args, *, data=None, quiet=False, check=True, timeout=900):
     if not quiet:
         print('+ ' + ' '.join(str(a) for a in args), flush=True)
@@ -140,13 +161,15 @@ class Demo:
         pods = json.loads(self.k('-n', NS, 'get', 'pods', '-o', 'json', quiet=True))['items']
         result = []
         for pod in pods:
+            if pod['metadata'].get('deletionTimestamp') or pod['status']['phase'] != 'Running':
+                continue
             name = pod['metadata']['name']
             app = pod['metadata']['labels']['app']
             if app == 'plaintext':
-                if any(c['name'] == 'istio-proxy' for c in pod['spec']['containers']):
+                if has_sidecar(pod):
                     raise AssertionError('Plaintext negative client unexpectedly has sidecar')
                 continue
-            if not any(c['name'] == 'istio-proxy' for c in pod['spec']['containers']):
+            if not has_sidecar(pod):
                 raise AssertionError(name + ' has no sidecar')
             raw = json.loads(run(self.istio + ['proxy-config', 'secret', name, '-n', NS, '-o', 'json'], quiet=True))
             # Consume only the public certificate; do not persist the raw secret dump.
@@ -154,13 +177,15 @@ class Demo:
                       for s in raw['dynamicActiveSecrets'] if 'tlsCertificate' in s.get('secret', {})]
             if not chains:
                 raise AssertionError('No active workload certificate on ' + name)
-            cert = x509.load_pem_x509_certificate(base64.b64decode(chains[0]))
-            uris = cert.extensions.get_extension_for_class(x509.SubjectAlternativeName).value.get_values_for_type(x509.UniformResourceIdentifier)
             expected = 'spiffe://cluster.local/ns/' + NS + '/sa/' + pod['spec']['serviceAccountName']
-            if expected not in uris or cert.not_valid_after_utc <= datetime.now(timezone.utc):
-                raise AssertionError('Missing/expired workload identity on ' + name)
-            result.append({'app': app, 'pod': name, 'uri': expected,
-                           'not_after': cert.not_valid_after_utc.isoformat(), 'sidecar': True})
+            result.append({'app': app, 'pod': name, 'sidecar': True,
+                           **certificate_evidence(base64.b64decode(chains[0]), expected)})
+        apps = {item['app'] for item in result}
+        required = {'frontend', 'salary', 'profile', 'probe', 'intruder'}
+        if self.args.external_authz:
+            required |= {'pe', 'context', 'mesh-authz'}
+        if not required <= apps:
+            raise AssertionError('Missing active workload evidence: ' + str(required - apps))
         return result
 
     def verify(self):
@@ -185,7 +210,8 @@ class Demo:
                 'x-zta-subject': 'alice', 'x-zta-session': 'invented'})
             self.expect(checks, 'plaintext rejected by STRICT mTLS', 'plaintext', 'salary', '/api/salary', [0, 503])
             ip = json.loads(self.k('-n', NS, 'get', 'pods', '-l', 'app=salary', '-o', 'json', quiet=True))['items'][0]['status']['podIP']
-            self.expect(checks, 'direct Pod IP cannot bypass PEP', 'intruder', ip, '/api/salary', [0, 403, 503])
+            self.expect(checks, 'direct Pod IP attempt unsuccessful (routing/TLS/RBAC)', 'intruder', ip, '/api/salary', [0, 403, 503])
+            self.expect(checks, 'service remains reachable after direct-IP attempt', 'frontend', 'salary', '/api/salary', [200], resource='salary')
             deny = {'apiVersion': 'security.istio.io/v1', 'kind': 'AuthorizationPolicy',
                     'metadata': {'name': 'temporary-revoke', 'namespace': NS},
                     'spec': {'selector': {'matchLabels': {'app': 'salary'}}, 'action': 'DENY', 'rules': [{}]}}

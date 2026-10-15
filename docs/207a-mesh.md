@@ -97,7 +97,7 @@ Linux/macOS 使用 `.venv/bin/python` 取代 `.\.venv\Scripts\python.exe`。`up`
 | intruder 偽造 XFCC、x-zta-subject、x-zta-session | 403 |
 | intruder GET /health | 403，無隱含健康檢查授權 |
 | plaintext → salary | TLS/連線失敗或 proxy 503；不能當成已授權 HTTP |
-| intruder → salary Pod IP | 拒絕，不能繞過目的端 sidecar |
+| intruder → salary Pod IP | 存取不成功；另確認正常 service 路徑仍成功 |
 | 新增 DENY policy，再移除 | 403 → 200，展示 policy distribution |
 
 若只想看 facade，可另開終端：
@@ -122,8 +122,11 @@ in-mesh probe。沒有設定 public ingress、LoadBalancer 或 NodePort。
 結果另存 `artifacts/mesh-external.json`。此模式建立獨立的 Context、PE、gRPC adapter
 與 random Kubernetes Secret。PE 的 `/evaluate-service` 受原本的 service key dependency
 保護，且側車只允許 adapter SA 呼叫；adapter 本身只允許 salary/profile SA 呼叫。
-gRPC principal 是受信任目的端代理傳入的 TLS metadata；若其他 client 可直接呼叫 adapter，
-CheckRequest 是可偽造的，所以保護 adapter 的 policy 也是必要邊界。
+正常 gRPC principal 是目的端代理傳入的 TLS metadata。此處 policy 信任的是整個
+salary/profile Pod 與 ServiceAccount，無法區分同 Pod 的 proxy 與 application process；
+那些 application 也能直接送出偽造 CheckRequest／audit claims。因此 native ALLOW
+仍獨立約束真正 data-plane principal，adapter ALLOW 無法繞過它。若要將 backend
+application compromise 納入威脅模型，必須再隔離／認證 proxy-to-adapter 通道。
 
 `mesh/service-policy.json` 定義 source/destination SPIFFE URI、GET、exact path。
 ConfigMap 以目錄 volume 掛載（不是不會更新的 subPath），PE 每次讀取並驗證政策。
