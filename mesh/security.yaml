@@ -1,0 +1,56 @@
+apiVersion: security.istio.io/v1
+kind: PeerAuthentication
+metadata: {name: strict-mtls, namespace: zta-207a}
+spec:
+  mtls: {mode: STRICT}
+---
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata: {name: default-deny, namespace: zta-207a}
+spec: {}
+---
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata: {name: probe-to-frontend, namespace: zta-207a}
+spec:
+  selector: {matchLabels: {app: frontend}}
+  action: ALLOW
+  rules:
+    - from:
+        - source: {principals: [cluster.local/ns/zta-207a/sa/probe]}
+      to:
+        - operation: {ports: ['8000'], methods: [GET], paths: ['/', /api/salary, /api/profile]}
+---
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata: {name: frontend-to-salary, namespace: zta-207a}
+spec:
+  selector: {matchLabels: {app: salary}}
+  action: ALLOW
+  rules:
+    - from:
+        - source: {principals: [cluster.local/ns/zta-207a/sa/frontend]}
+      to:
+        - operation: {ports: ['8000'], methods: [GET], paths: [/api/salary]}
+---
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata: {name: frontend-to-profile, namespace: zta-207a}
+spec:
+  selector: {matchLabels: {app: profile}}
+  action: ALLOW
+  rules:
+    - from:
+        - source: {principals: [cluster.local/ns/zta-207a/sa/frontend]}
+      to:
+        - operation: {ports: ['8000'], methods: [GET], paths: [/api/profile]}
+---
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata: {name: workload-mtls, namespace: zta-207a}
+spec:
+  host: '*.zta-207a.svc.cluster.local'
+  trafficPolicy:
+    tls: {mode: ISTIO_MUTUAL}
+    connectionPool:
+      tcp: {maxConnectionDuration: 1800s}

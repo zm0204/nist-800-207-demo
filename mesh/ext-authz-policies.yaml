@@ -1,0 +1,47 @@
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata: {name: backend-external-decision, namespace: zta-207a}
+spec:
+  selector: {matchLabels: {role: backend}}
+  action: CUSTOM
+  provider: {name: workload-pe}
+  rules:
+    - to:
+        - operation: {ports: ['8000']}
+---
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata: {name: backends-to-authz, namespace: zta-207a}
+spec:
+  selector: {matchLabels: {app: mesh-authz}}
+  action: ALLOW
+  rules:
+    - from:
+        - source:
+            principals: [cluster.local/ns/zta-207a/sa/salary, cluster.local/ns/zta-207a/sa/profile]
+      to:
+        - operation: {ports: ['9000']}
+---
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata: {name: authz-to-pe, namespace: zta-207a}
+spec:
+  selector: {matchLabels: {app: pe}}
+  action: ALLOW
+  rules:
+    - from:
+        - source: {principals: [cluster.local/ns/zta-207a/sa/mesh-authz]}
+      to:
+        - operation: {ports: ['8000'], methods: [POST], paths: [/evaluate-service]}
+---
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata: {name: pe-to-context, namespace: zta-207a}
+spec:
+  selector: {matchLabels: {app: context}}
+  action: ALLOW
+  rules:
+    - from:
+        - source: {principals: [cluster.local/ns/zta-207a/sa/pe]}
+      to:
+        - operation: {ports: ['8000'], methods: [POST], paths: [/event]}

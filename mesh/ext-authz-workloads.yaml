@@ -1,0 +1,273 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: context
+  namespace: zta-207a
+automountServiceAccountToken: false
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: context
+  namespace: zta-207a
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: context
+  template:
+    metadata:
+      labels:
+        app: context
+      annotations:
+        sidecar.istio.io/inject: 'true'
+        sidecar.istio.io/proxyCPU: 10m
+        sidecar.istio.io/proxyMemory: 64Mi
+        sidecar.istio.io/proxyMemoryLimit: 256Mi
+    spec:
+      serviceAccountName: context
+      containers:
+      - name: app
+        image: zta-207a:local
+        imagePullPolicy: IfNotPresent
+        command:
+        - uvicorn
+        - app.context:app
+        - --host
+        - 0.0.0.0
+        - --port
+        - '8000'
+        - --no-access-log
+        resources:
+          requests:
+            cpu: 10m
+            memory: 48Mi
+          limits:
+            cpu: 500m
+            memory: 192Mi
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 10001
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+          seccompProfile:
+            type: RuntimeDefault
+        ports:
+        - containerPort: 8000
+          name: http
+        readinessProbe:
+          exec:
+            command:
+            - python
+            - -c
+            - import os,urllib.request; urllib.request.urlopen(urllib.request.Request('http://localhost:8000/health',headers={'x-service-key':os.environ['SERVICE_KEY']}),timeout=2)
+          periodSeconds: 5
+        env:
+        - name: SERVICE_KEY
+          valueFrom:
+            secretKeyRef:
+              name: mesh-control
+              key: service-key
+        - name: STATE_DIR
+          value: /state
+        volumeMounts:
+        - name: state
+          mountPath: /state
+      volumes:
+      - name: state
+        emptyDir: {}
+      securityContext:
+        fsGroup: 10001
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: context
+  namespace: zta-207a
+spec:
+  selector:
+    app: context
+  ports:
+  - name: http
+    port: 8000
+    targetPort: 8000
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: pe
+  namespace: zta-207a
+automountServiceAccountToken: false
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pe
+  namespace: zta-207a
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pe
+  template:
+    metadata:
+      labels:
+        app: pe
+      annotations:
+        sidecar.istio.io/inject: 'true'
+        sidecar.istio.io/proxyCPU: 10m
+        sidecar.istio.io/proxyMemory: 64Mi
+        sidecar.istio.io/proxyMemoryLimit: 256Mi
+    spec:
+      serviceAccountName: pe
+      containers:
+      - name: app
+        image: zta-207a:local
+        imagePullPolicy: IfNotPresent
+        command:
+        - uvicorn
+        - app.pe:app
+        - --host
+        - 0.0.0.0
+        - --port
+        - '8000'
+        - --no-access-log
+        resources:
+          requests:
+            cpu: 10m
+            memory: 48Mi
+          limits:
+            cpu: 500m
+            memory: 192Mi
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 10001
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+          seccompProfile:
+            type: RuntimeDefault
+        ports:
+        - containerPort: 8000
+          name: http
+        readinessProbe:
+          exec:
+            command:
+            - python
+            - -c
+            - import os,urllib.request; urllib.request.urlopen(urllib.request.Request('http://localhost:8000/health',headers={'x-service-key':os.environ['SERVICE_KEY']}),timeout=2)
+          periodSeconds: 5
+        env:
+        - name: SERVICE_KEY
+          valueFrom:
+            secretKeyRef:
+              name: mesh-control
+              key: service-key
+        - name: SERVICE_POLICY_FILE
+          value: /policy/service-policy.json
+        volumeMounts:
+        - name: policy
+          mountPath: /policy
+          readOnly: true
+      volumes:
+      - name: policy
+        configMap:
+          name: service-policy
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pe
+  namespace: zta-207a
+spec:
+  selector:
+    app: pe
+  ports:
+  - name: http
+    port: 8000
+    targetPort: 8000
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: mesh-authz
+  namespace: zta-207a
+automountServiceAccountToken: false
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mesh-authz
+  namespace: zta-207a
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mesh-authz
+  template:
+    metadata:
+      labels:
+        app: mesh-authz
+      annotations:
+        sidecar.istio.io/inject: 'true'
+        sidecar.istio.io/proxyCPU: 10m
+        sidecar.istio.io/proxyMemory: 64Mi
+        sidecar.istio.io/proxyMemoryLimit: 256Mi
+    spec:
+      serviceAccountName: mesh-authz
+      containers:
+      - name: app
+        image: zta-207a:local
+        imagePullPolicy: IfNotPresent
+        command:
+        - python
+        - -m
+        - app.mesh_authz
+        resources:
+          requests:
+            cpu: 10m
+            memory: 48Mi
+          limits:
+            cpu: 500m
+            memory: 192Mi
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 10001
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+          seccompProfile:
+            type: RuntimeDefault
+        env:
+        - name: SERVICE_KEY
+          valueFrom:
+            secretKeyRef:
+              name: mesh-control
+              key: service-key
+        ports:
+        - containerPort: 9000
+          name: grpc
+        readinessProbe:
+          tcpSocket:
+            port: 9000
+          periodSeconds: 3
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mesh-authz
+  namespace: zta-207a
+spec:
+  selector:
+    app: mesh-authz
+  ports:
+  - name: grpc
+    port: 9000
+    targetPort: 9000

@@ -1,0 +1,410 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: zta-207a
+  labels:
+    istio-injection: enabled
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: frontend
+  namespace: zta-207a
+automountServiceAccountToken: false
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: zta-207a
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+      annotations:
+        sidecar.istio.io/inject: 'true'
+        sidecar.istio.io/proxyCPU: 10m
+        sidecar.istio.io/proxyMemory: 64Mi
+        sidecar.istio.io/proxyMemoryLimit: 256Mi
+    spec:
+      serviceAccountName: frontend
+      containers:
+      - name: app
+        image: zta-207a:local
+        imagePullPolicy: IfNotPresent
+        command:
+        - uvicorn
+        - app.mesh_frontend:app
+        - --host
+        - 0.0.0.0
+        - --port
+        - '8000'
+        - --no-access-log
+        resources:
+          requests:
+            cpu: 10m
+            memory: 48Mi
+          limits:
+            cpu: 500m
+            memory: 192Mi
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 10001
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+          seccompProfile:
+            type: RuntimeDefault
+        ports:
+        - containerPort: 8000
+          name: http
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 2
+          periodSeconds: 3
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+  namespace: zta-207a
+spec:
+  selector:
+    app: frontend
+  ports:
+  - name: http
+    port: 8000
+    targetPort: 8000
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: salary
+  namespace: zta-207a
+automountServiceAccountToken: false
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: salary
+  namespace: zta-207a
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: salary
+  template:
+    metadata:
+      labels:
+        app: salary
+        role: backend
+      annotations:
+        sidecar.istio.io/inject: 'true'
+        sidecar.istio.io/proxyCPU: 10m
+        sidecar.istio.io/proxyMemory: 64Mi
+        sidecar.istio.io/proxyMemoryLimit: 256Mi
+    spec:
+      serviceAccountName: salary
+      containers:
+      - name: app
+        image: zta-207a:local
+        imagePullPolicy: IfNotPresent
+        command:
+        - uvicorn
+        - app.mesh_salary:app
+        - --host
+        - 0.0.0.0
+        - --port
+        - '8000'
+        - --no-access-log
+        resources:
+          requests:
+            cpu: 10m
+            memory: 48Mi
+          limits:
+            cpu: 500m
+            memory: 192Mi
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 10001
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+          seccompProfile:
+            type: RuntimeDefault
+        ports:
+        - containerPort: 8000
+          name: http
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 2
+          periodSeconds: 3
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: salary
+  namespace: zta-207a
+spec:
+  selector:
+    app: salary
+  ports:
+  - name: http
+    port: 8000
+    targetPort: 8000
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: profile
+  namespace: zta-207a
+automountServiceAccountToken: false
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: profile
+  namespace: zta-207a
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: profile
+  template:
+    metadata:
+      labels:
+        app: profile
+        role: backend
+      annotations:
+        sidecar.istio.io/inject: 'true'
+        sidecar.istio.io/proxyCPU: 10m
+        sidecar.istio.io/proxyMemory: 64Mi
+        sidecar.istio.io/proxyMemoryLimit: 256Mi
+    spec:
+      serviceAccountName: profile
+      containers:
+      - name: app
+        image: zta-207a:local
+        imagePullPolicy: IfNotPresent
+        command:
+        - uvicorn
+        - app.mesh_profile:app
+        - --host
+        - 0.0.0.0
+        - --port
+        - '8000'
+        - --no-access-log
+        resources:
+          requests:
+            cpu: 10m
+            memory: 48Mi
+          limits:
+            cpu: 500m
+            memory: 192Mi
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 10001
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+          seccompProfile:
+            type: RuntimeDefault
+        ports:
+        - containerPort: 8000
+          name: http
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 2
+          periodSeconds: 3
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: profile
+  namespace: zta-207a
+spec:
+  selector:
+    app: profile
+  ports:
+  - name: http
+    port: 8000
+    targetPort: 8000
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: probe
+  namespace: zta-207a
+automountServiceAccountToken: false
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: probe
+  namespace: zta-207a
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: probe
+  template:
+    metadata:
+      labels:
+        app: probe
+      annotations:
+        sidecar.istio.io/inject: 'true'
+        sidecar.istio.io/proxyCPU: 10m
+        sidecar.istio.io/proxyMemory: 64Mi
+        sidecar.istio.io/proxyMemoryLimit: 256Mi
+    spec:
+      serviceAccountName: probe
+      containers:
+      - name: app
+        image: zta-207a:local
+        imagePullPolicy: IfNotPresent
+        command:
+        - python
+        - -c
+        - import time; time.sleep(2147483647)
+        resources:
+          requests:
+            cpu: 10m
+            memory: 48Mi
+          limits:
+            cpu: 500m
+            memory: 192Mi
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 10001
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+          seccompProfile:
+            type: RuntimeDefault
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: intruder
+  namespace: zta-207a
+automountServiceAccountToken: false
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: intruder
+  namespace: zta-207a
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: intruder
+  template:
+    metadata:
+      labels:
+        app: intruder
+      annotations:
+        sidecar.istio.io/inject: 'true'
+        sidecar.istio.io/proxyCPU: 10m
+        sidecar.istio.io/proxyMemory: 64Mi
+        sidecar.istio.io/proxyMemoryLimit: 256Mi
+    spec:
+      serviceAccountName: intruder
+      containers:
+      - name: app
+        image: zta-207a:local
+        imagePullPolicy: IfNotPresent
+        command:
+        - python
+        - -c
+        - import time; time.sleep(2147483647)
+        resources:
+          requests:
+            cpu: 10m
+            memory: 48Mi
+          limits:
+            cpu: 500m
+            memory: 192Mi
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 10001
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+          seccompProfile:
+            type: RuntimeDefault
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: plaintext
+  namespace: zta-207a
+automountServiceAccountToken: false
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: plaintext
+  namespace: zta-207a
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: plaintext
+  template:
+    metadata:
+      labels:
+        app: plaintext
+      annotations:
+        sidecar.istio.io/inject: 'false'
+        sidecar.istio.io/proxyCPU: 10m
+        sidecar.istio.io/proxyMemory: 64Mi
+        sidecar.istio.io/proxyMemoryLimit: 256Mi
+    spec:
+      serviceAccountName: plaintext
+      containers:
+      - name: app
+        image: zta-207a:local
+        imagePullPolicy: IfNotPresent
+        command:
+        - python
+        - -c
+        - import time; time.sleep(2147483647)
+        resources:
+          requests:
+            cpu: 10m
+            memory: 48Mi
+          limits:
+            cpu: 500m
+            memory: 192Mi
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 10001
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+          seccompProfile:
+            type: RuntimeDefault
