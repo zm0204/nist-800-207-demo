@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "grants": [
+    {
+      "source": "spiffe://cluster.local/ns/zta-207a/sa/frontend",
+      "destination": "spiffe://cluster.local/ns/zta-207a/sa/salary",
+      "method": "GET",
+      "path": "/api/salary"
+    },
+    {
+      "source": "spiffe://cluster.local/ns/zta-207a/sa/frontend",
+      "destination": "spiffe://cluster.local/ns/zta-207a/sa/profile",
+      "method": "GET",
+      "path": "/api/profile"
+    }
+  ]
+}

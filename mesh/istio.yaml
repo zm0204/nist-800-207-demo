@@ -1,0 +1,23 @@
+apiVersion: install.istio.io/v1alpha1
+kind: IstioOperator
+spec:
+  profile: minimal
+  meshConfig:
+    trustDomain: cluster.local
+    accessLogFile: /dev/stdout
+    accessLogEncoding: JSON
+    defaultConfig:
+      holdApplicationUntilProxyStarts: true
+      proxyMetadata:
+        SECRET_TTL: 1h
+    extensionProviders:
+      - name: workload-pe
+        envoyExtAuthzGrpc:
+          service: mesh-authz.zta-207a.svc.cluster.local
+          port: 9000
+          timeout: 3s
+          failOpen: false
+  values:
+    pilot:
+      env:
+        DEFAULT_WORKLOAD_CERT_TTL: 1h
