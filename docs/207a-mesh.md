@@ -97,7 +97,7 @@ Linux/macOS 使用 `.venv/bin/python` 取代 `.\.venv\Scripts\python.exe`。`up`
 | intruder 偽造 XFCC、x-zta-subject、x-zta-session | 403 |
 | intruder GET /health | 403，無隱含健康檢查授權 |
 | plaintext → salary | TLS/連線失敗或 proxy 503；不能當成已授權 HTTP |
-| intruder → salary Pod IP | 存取不成功；另確認正常 service 路徑仍成功 |
+| intruder → salary Pod IP | 存取不成功；另確認正常 service 路徑仍成功（不單憑 503 判定是 routing、TLS 或 RBAC 哪一層拒絕） |
 | 新增 DENY policy，再移除 | 403 → 200，展示 policy distribution |
 
 若只想看 facade，可另開終端：
