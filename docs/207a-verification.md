@@ -1,5 +1,15 @@
 # 207A verification evidence
 
+## Deployed again on 2026-10-20
+
+The Windows host now runs the dedicated `zta-207a` kind cluster with PE external
+authorization enabled. Fresh checks passed: base **14/14**, external **23/23**,
+Python **69/69**, isolated original Compose PE/PA regression **9/9**, and all three
+localhost preview routes returned **200**. Tested application revision remains
+`30e8911dbfeb7404464ee06c7405c1ea6d9ecc40`; the follow-up changes add deployment
+documentation and evidence only. See the [deployment handoff](207a-deployment-2026-10-20.md)
+and [committed JSON evidence](evidence/2026-10-20/mesh-external.json).
+
 Environment: Windows / Docker Desktop Linux engine 29.8.2, Python 3.12.
 Reference base: `d629f859c24b471934c1517714fc676cdd618e42`.
 

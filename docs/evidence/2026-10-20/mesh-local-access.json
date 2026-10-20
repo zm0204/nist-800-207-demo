@@ -1,0 +1,36 @@
+[
+  {
+    "path": "/",
+    "status": 200,
+    "data": {
+      "demo": "SP 800-207A service identity",
+      "resources": [
+        "/api/salary",
+        "/api/profile"
+      ],
+      "identity": "Istio mTLS ServiceAccount identity",
+      "note": "Operator demo; end-user authentication remains in the original 207 stack"
+    }
+  },
+  {
+    "path": "/api/salary",
+    "status": 200,
+    "data": {
+      "resource": "salary",
+      "subject": "alice",
+      "currency": "TWD",
+      "amount": 50000,
+      "note": "Synthetic demo data; workload-only authorization"
+    }
+  },
+  {
+    "path": "/api/profile",
+    "status": 200,
+    "data": {
+      "resource": "profile",
+      "subject": "alice",
+      "role": "employee",
+      "data": "Synthetic demo profile; workload-only authorization"
+    }
+  }
+]
