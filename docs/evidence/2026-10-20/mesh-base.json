@@ -1,0 +1,244 @@
+{
+  "started_at": "2026-10-20T08:07:09.220523+00:00",
+  "context": "kind-zta-207a",
+  "external_authz": false,
+  "checks": [
+    {
+      "name": "authorized chain to salary",
+      "passed": true,
+      "expected_status": [
+        200
+      ],
+      "result": {
+        "status": 200,
+        "data": {
+          "resource": "salary",
+          "subject": "alice",
+          "currency": "TWD",
+          "amount": 50000,
+          "note": "Synthetic demo data; workload-only authorization"
+        }
+      }
+    },
+    {
+      "name": "authorized chain to profile",
+      "passed": true,
+      "expected_status": [
+        200
+      ],
+      "result": {
+        "status": 200,
+        "data": {
+          "resource": "profile",
+          "subject": "alice",
+          "role": "employee",
+          "data": "Synthetic demo profile; workload-only authorization"
+        }
+      }
+    },
+    {
+      "name": "query preserves allowed path",
+      "passed": true,
+      "expected_status": [
+        200
+      ],
+      "result": {
+        "status": 200,
+        "data": {
+          "resource": "salary",
+          "subject": "alice",
+          "currency": "TWD",
+          "amount": 50000,
+          "note": "Synthetic demo data; workload-only authorization"
+        }
+      }
+    },
+    {
+      "name": "wrong workload identity",
+      "passed": true,
+      "expected_status": [
+        403
+      ],
+      "result": {
+        "status": 403,
+        "data": null
+      }
+    },
+    {
+      "name": "probe cannot bypass frontend",
+      "passed": true,
+      "expected_status": [
+        403
+      ],
+      "result": {
+        "status": 403,
+        "data": null
+      }
+    },
+    {
+      "name": "wrong method",
+      "passed": true,
+      "expected_status": [
+        403
+      ],
+      "result": {
+        "status": 403,
+        "data": null
+      }
+    },
+    {
+      "name": "wrong path",
+      "passed": true,
+      "expected_status": [
+        403
+      ],
+      "result": {
+        "status": 403,
+        "data": null
+      }
+    },
+    {
+      "name": "health route has no implicit grant",
+      "passed": true,
+      "expected_status": [
+        403
+      ],
+      "result": {
+        "status": 403,
+        "data": null
+      }
+    },
+    {
+      "name": "forged identity headers",
+      "passed": true,
+      "expected_status": [
+        403
+      ],
+      "result": {
+        "status": 403,
+        "data": null
+      }
+    },
+    {
+      "name": "plaintext rejected by STRICT mTLS",
+      "passed": true,
+      "expected_status": [
+        0,
+        503
+      ],
+      "result": {
+        "status": 0,
+        "error": "ReadError"
+      }
+    },
+    {
+      "name": "direct Pod IP attempt unsuccessful (routing/TLS/RBAC)",
+      "passed": true,
+      "expected_status": [
+        0,
+        403,
+        503
+      ],
+      "result": {
+        "status": 503,
+        "data": null
+      }
+    },
+    {
+      "name": "service remains reachable after direct-IP attempt",
+      "passed": true,
+      "expected_status": [
+        200
+      ],
+      "result": {
+        "status": 200,
+        "data": {
+          "resource": "salary",
+          "subject": "alice",
+          "currency": "TWD",
+          "amount": 50000,
+          "note": "Synthetic demo data; workload-only authorization"
+        }
+      }
+    },
+    {
+      "name": "native policy revocation",
+      "passed": true,
+      "expected_status": [
+        403
+      ],
+      "result": {
+        "status": 403,
+        "data": null
+      }
+    },
+    {
+      "name": "native policy restored",
+      "passed": true,
+      "expected_status": [
+        200
+      ],
+      "result": {
+        "status": 200,
+        "data": {
+          "resource": "salary",
+          "subject": "alice",
+          "currency": "TWD",
+          "amount": 50000,
+          "note": "Synthetic demo data; workload-only authorization"
+        }
+      }
+    }
+  ],
+  "passed": true,
+  "kubernetes": "v1.35.0",
+  "revision": "30e8911dbfeb7404464ee06c7405c1ea6d9ecc40",
+  "certificates": [
+    {
+      "app": "frontend",
+      "pod": "frontend-7f54fb9d48-rgkrg",
+      "sidecar": true,
+      "uri": "spiffe://cluster.local/ns/zta-207a/sa/frontend",
+      "not_before": "2026-10-20T08:04:32+00:00",
+      "not_after": "2026-10-20T09:06:32+00:00",
+      "lifetime_seconds": 3720.0
+    },
+    {
+      "app": "intruder",
+      "pod": "intruder-6476f488-5pbcl",
+      "sidecar": true,
+      "uri": "spiffe://cluster.local/ns/zta-207a/sa/intruder",
+      "not_before": "2026-10-20T08:04:51+00:00",
+      "not_after": "2026-10-20T09:06:51+00:00",
+      "lifetime_seconds": 3720.0
+    },
+    {
+      "app": "probe",
+      "pod": "probe-6d687754d4-vqmfj",
+      "sidecar": true,
+      "uri": "spiffe://cluster.local/ns/zta-207a/sa/probe",
+      "not_before": "2026-10-20T08:04:47+00:00",
+      "not_after": "2026-10-20T09:06:47+00:00",
+      "lifetime_seconds": 3720.0
+    },
+    {
+      "app": "profile",
+      "pod": "profile-5dc5fcfb94-4gns2",
+      "sidecar": true,
+      "uri": "spiffe://cluster.local/ns/zta-207a/sa/profile",
+      "not_before": "2026-10-20T08:04:42+00:00",
+      "not_after": "2026-10-20T09:06:42+00:00",
+      "lifetime_seconds": 3720.0
+    },
+    {
+      "app": "salary",
+      "pod": "salary-7b46658f8-ldlz2",
+      "sidecar": true,
+      "uri": "spiffe://cluster.local/ns/zta-207a/sa/salary",
+      "not_before": "2026-10-20T08:04:37+00:00",
+      "not_after": "2026-10-20T09:06:37+00:00",
+      "lifetime_seconds": 3720.0
+    }
+  ],
+  "finished_at": "2026-10-20T08:07:15.134687+00:00"
+}

@@ -1,0 +1,228 @@
+{
+  "active": null,
+  "runs": [
+    {
+      "id": "b8b9bf392bce4133b3004de692d86f7c",
+      "scenario": "plaintext",
+      "state": "done",
+      "started_at": "2026-10-21T14:33:28.001284+00:00",
+      "result": {
+        "passed": true,
+        "response": {
+          "status": 0,
+          "error": "ReadError"
+        },
+        "elapsed_ms": 297,
+        "request": {
+          "caller": "plaintext",
+          "target": "salary",
+          "path": "/api/salary",
+          "method": "GET",
+          "headers": {}
+        },
+        "expected": [
+          0,
+          503
+        ]
+      },
+      "finished_at": "2026-10-21T14:33:28.293681+00:00"
+    },
+    {
+      "id": "4df615945cf7485e96de7d4d5f54d180",
+      "scenario": "forged-headers",
+      "state": "done",
+      "started_at": "2026-10-21T14:33:26.867458+00:00",
+      "result": {
+        "passed": true,
+        "response": {
+          "status": 403,
+          "data": null,
+          "text": ""
+        },
+        "elapsed_ms": 297,
+        "request": {
+          "caller": "intruder",
+          "target": "salary",
+          "path": "/api/salary",
+          "method": "GET",
+          "headers": {
+            "x-forwarded-client-cert": "URI=spiffe://cluster.local/ns/zta-207a/sa/frontend",
+            "x-zta-subject": "alice",
+            "x-zta-session": "invented"
+          }
+        },
+        "expected": [
+          403
+        ]
+      },
+      "finished_at": "2026-10-21T14:33:27.170157+00:00"
+    },
+    {
+      "id": "9c5c8b8275154dc49ac44d6edb6e24c3",
+      "scenario": "wrong-path",
+      "state": "done",
+      "started_at": "2026-10-21T14:33:25.750832+00:00",
+      "result": {
+        "passed": true,
+        "response": {
+          "status": 403,
+          "data": null,
+          "text": ""
+        },
+        "elapsed_ms": 266,
+        "request": {
+          "caller": "frontend",
+          "target": "salary",
+          "path": "/api/profile",
+          "method": "GET",
+          "headers": {}
+        },
+        "expected": [
+          403
+        ]
+      },
+      "finished_at": "2026-10-21T14:33:26.007859+00:00"
+    },
+    {
+      "id": "7cb134164dea4cb485399a3f4d3d4cee",
+      "scenario": "wrong-method",
+      "state": "done",
+      "started_at": "2026-10-21T14:33:24.618007+00:00",
+      "result": {
+        "passed": true,
+        "response": {
+          "status": 403,
+          "data": null,
+          "text": ""
+        },
+        "elapsed_ms": 281,
+        "request": {
+          "caller": "frontend",
+          "target": "salary",
+          "path": "/api/salary",
+          "method": "POST",
+          "headers": {}
+        },
+        "expected": [
+          403
+        ]
+      },
+      "finished_at": "2026-10-21T14:33:24.901693+00:00"
+    },
+    {
+      "id": "00f1a4a4213e4714bb58686e2bf5423b",
+      "scenario": "bypass",
+      "state": "done",
+      "started_at": "2026-10-21T14:33:23.484929+00:00",
+      "result": {
+        "passed": true,
+        "response": {
+          "status": 403,
+          "data": null,
+          "text": ""
+        },
+        "elapsed_ms": 313,
+        "request": {
+          "caller": "probe",
+          "target": "salary",
+          "path": "/api/salary",
+          "method": "GET",
+          "headers": {}
+        },
+        "expected": [
+          403
+        ]
+      },
+      "finished_at": "2026-10-21T14:33:23.797699+00:00"
+    },
+    {
+      "id": "b4653a140edb4a9ba57e96a3ab94e2f7",
+      "scenario": "wrong-identity",
+      "state": "done",
+      "started_at": "2026-10-21T14:33:22.351606+00:00",
+      "result": {
+        "passed": true,
+        "response": {
+          "status": 403,
+          "data": null,
+          "text": ""
+        },
+        "elapsed_ms": 266,
+        "request": {
+          "caller": "intruder",
+          "target": "salary",
+          "path": "/api/salary",
+          "method": "GET",
+          "headers": {}
+        },
+        "expected": [
+          403
+        ]
+      },
+      "finished_at": "2026-10-21T14:33:22.614378+00:00"
+    },
+    {
+      "id": "dd862b63e3e947c9a05389b19850f665",
+      "scenario": "profile",
+      "state": "done",
+      "started_at": "2026-10-21T14:33:21.218885+00:00",
+      "result": {
+        "passed": true,
+        "response": {
+          "status": 200,
+          "data": {
+            "resource": "profile",
+            "subject": "alice",
+            "role": "employee",
+            "data": "Synthetic demo profile; workload-only authorization"
+          },
+          "text": "{\"resource\":\"profile\",\"subject\":\"alice\",\"role\":\"employee\",\"data\":\"Synthetic demo profile; workload-only authorization\"}"
+        },
+        "elapsed_ms": 281,
+        "request": {
+          "caller": "probe",
+          "target": "frontend",
+          "path": "/api/profile",
+          "method": "GET",
+          "headers": {}
+        },
+        "expected": [
+          200
+        ]
+      },
+      "finished_at": "2026-10-21T14:33:21.500759+00:00"
+    },
+    {
+      "id": "d81c3c48c9c24dc8bb2753ddf8fbc4c5",
+      "scenario": "salary",
+      "state": "done",
+      "started_at": "2026-10-21T14:33:20.090527+00:00",
+      "result": {
+        "passed": true,
+        "response": {
+          "status": 200,
+          "data": {
+            "resource": "salary",
+            "subject": "alice",
+            "currency": "TWD",
+            "amount": 50000,
+            "note": "Synthetic demo data; workload-only authorization"
+          },
+          "text": "{\"resource\":\"salary\",\"subject\":\"alice\",\"currency\":\"TWD\",\"amount\":50000,\"note\":\"Synthetic demo data; workload-only authorization\"}"
+        },
+        "elapsed_ms": 312,
+        "request": {
+          "caller": "probe",
+          "target": "frontend",
+          "path": "/api/salary",
+          "method": "GET",
+          "headers": {}
+        },
+        "expected": [
+          200
+        ]
+      },
+      "finished_at": "2026-10-21T14:33:20.401419+00:00"
+    }
+  ]
+}

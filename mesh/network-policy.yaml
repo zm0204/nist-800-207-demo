@@ -1,0 +1,17 @@
+# Optional NETWORK tier. Apply only with a CNI that enforces NetworkPolicy.
+# kind's default kindnet does not enforce this; it is not part of base test claims.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: namespace-ingress-boundary, namespace: zta-207a}
+spec:
+  podSelector: {}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector: {}
+      ports:
+        - {protocol: TCP, port: 8000}
+        - {protocol: TCP, port: 9000}
+# This permits only namespace-local application port traffic. Service-to-service
+# identity and HTTP scope still require the Istio policies. Egress, DNS, istiod,
+# metrics collection and operator access need environment-specific rules.

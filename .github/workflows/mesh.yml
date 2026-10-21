@@ -1,0 +1,50 @@
+name: Verify 207A Mesh
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  mesh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install application and mesh test dependencies
+        run: python -m pip install -r requirements-dev.txt -r requirements-mesh.txt
+      - name: Full Python regression suite including real gRPC adapter tests
+        run: python -m pytest -q
+      - name: Install pinned kind and istioctl
+        run: |
+          mkdir -p .tmp/bin
+          curl -fL --retry 3 https://kind.sigs.k8s.io/dl/v0.33.0/kind-linux-amd64 -o .tmp/bin/kind
+          curl -fL --retry 3 https://github.com/istio/istio/releases/download/1.31.1/istioctl-1.31.1-linux-amd64.tar.gz -o .tmp/istioctl.tar.gz
+          tar -xzf .tmp/istioctl.tar.gz -C .tmp/bin
+          chmod +x .tmp/bin/kind .tmp/bin/istioctl
+          echo "$GITHUB_WORKSPACE/.tmp/bin" >> "$GITHUB_PATH"
+      - name: Deploy independent base mesh
+        run: python scripts/mesh_demo.py up
+      - name: Verify actual sidecars, certificates, mTLS, identity and native policy
+        run: python scripts/mesh_demo.py verify
+      - name: Enable PE external authorization
+        run: python scripts/mesh_demo.py --external-authz up
+      - name: Verify PE policy reload and fail-closed dependency outages
+        run: python scripts/mesh_demo.py --external-authz verify
+      - name: Capture non-secret diagnostics
+        if: always()
+        run: |
+          kubectl --kubeconfig .tmp/mesh-kubeconfig --context kind-zta-207a -n zta-207a get pods,svc,peerauthentication,authorizationpolicy > artifacts/mesh-status.txt 2>&1 || true
+          kubectl --kubeconfig .tmp/mesh-kubeconfig --context kind-zta-207a -n zta-207a logs -l role=backend -c istio-proxy --tail=50 > artifacts/mesh-proxy-logs.txt 2>&1 || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mesh-verification-results
+          path: artifacts/mesh*
+          if-no-files-found: ignore
+      - name: Delete disposable CI cluster
+        if: always()
+        run: kind delete cluster --name zta-207a --kubeconfig .tmp/mesh-kubeconfig

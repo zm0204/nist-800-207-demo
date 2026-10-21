@@ -1,6 +1,12 @@
 # NIST SP 800-207 Zero Trust Architecture Demo
 
-以 **SP 800-207 本身**為藍本的 Device Agent/Gateway 展示，非 800-207A service mesh。Human 用 Passkey/WebAuthn、Device 用 X.509/mTLS；PDP = 分開的 PE + PA，Envoy 是 gateway PEP。
+以 **SP 800-207 本身**為藍本的 Device Agent/Gateway 展示。Human 用 Passkey/WebAuthn、Device 用 X.509/mTLS；PDP = 分開的 PE + PA，Envoy 是 gateway PEP。
+
+另新增獨立、可選的 **[SP 800-207A Kubernetes / Istio Sidecar Demo](docs/207a-mesh.md)**：STRICT mTLS、ServiceAccount / SPIFFE service identity、default-deny AuthorizationPolicy、frontend / salary / profile 微服務，以及可選的 PE gRPC ext_authz 與自動驗證。原本 Compose、Passkey、Device Identity、PA 與 Dashboard 的啟動及展示流程維持不變。兩個 Demo 可分別執行；mesh 目前驗證服務身分，尚未串接原登入流程或 Multi-Cluster。
+
+**207A 中文實驗台**：完成 mesh 部署後，執行 `.\.venv\Scripts\python.exe scripts/mesh_console.py`，開啟 **http://localhost:18081/**。可點選八個真實服務存取情境、查看回應／操作紀錄、讀取叢集與 SPIFFE 憑證，以及執行完整 23 項驗證。[操作與啟動說明](docs/207a-console.md)。此入口現在是 HTML 操作頁，Kubernetes frontend 的原 JSON API 保留。
+
+**2026-10-20 已在 Windows 本機實際部署 207A + PE external authorization**：base 14/14、external 23/23、Python 69/69、獨立原 207 PE/PA 回歸 9/9。[存取方式、Windows 操作指令與本次 JSON 證據](docs/207a-deployment-2026-10-20.md)。
 
 > **實際 Docker 驗證已通過**：[GitHub Actions Run #3](https://github.com/zm0204/nist-800-207-demo/actions/runs/37464773674)，包含 Compose 啟動、真正 Envoy/mTLS 與六個展示情境，另外驗證憑證綁定、串流撤銷與 PE 停機 fail closed。34 個本機測試也通過。詳細證據见 [docs/verification.md](docs/verification.md)。
 

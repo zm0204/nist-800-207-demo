@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>207A · 服務存取實驗台</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="/assets/console.css">
+  <script type="module" src="/assets/console.js"></script>
+</head>
+<body>
+  <aside class="rail">
+    <a class="wordmark" href="#top" aria-label="207A 實驗台首頁">207<span>A</span><small>SERVICE IDENTITY LAB</small></a>
+    <div class="rail-rule"></div>
+    <nav aria-label="頁面導覽">
+      <a class="current" href="#experiment"><span>01</span> 存取實驗</a>
+      <a href="#journal"><span>02</span> 操作紀錄</a>
+      <a href="#environment"><span>03</span> 環境與身分</a>
+    </nav>
+    <div class="rail-bottom"><span class="little-square"></span> 本機實驗環境<p>kind-zta-207a<br>Istio Sidecar Mode</p><small>NIST SP 800-207A<br>Workload identity demo</small></div>
+  </aside>
+  <div class="workspace" id="top">
+    <header class="topbar"><span>800-207 / <strong>207A 擴充實作</strong></span><span class="connection" id="connection"><i class="dot"></i>讀取環境中</span></header>
+    <main>
+      <div class="page-heading"><div><p class="eyebrow">實驗工作台 <span>/ LOCAL</span></p><h1>服務存取實驗</h1><p class="intro">換一個服務身分，送出相同請求，看看誰能通過。</p></div><button class="button quiet" id="full-verify">執行完整驗證 <span aria-hidden="true">↗</span></button></div>
+      <p class="page-error" id="page-error" role="alert" hidden></p>
+
+      <section id="experiment" aria-labelledby="route-heading">
+        <div class="section-heading"><h2 id="route-heading"><span class="section-number">01</span> 呼叫路徑</h2><span class="small-muted" id="route-caption">目前選擇的路徑 · 尚未執行</span></div>
+        <div class="route-strip" id="route-strip">
+          <div class="route-node source"><span class="node-kind">發起端</span><strong id="route-source">probe</strong><span class="node-note" id="source-note">測試用服務身分</span></div>
+          <div class="route-link"><span id="first-hop-label">mTLS</span><div></div></div>
+          <div class="route-node" id="route-frontend"><span class="node-kind">服務入口</span><strong>frontend</strong><span class="node-note">轉送到指定資源</span></div>
+          <div class="route-link" id="backend-link"><span>mTLS</span><div></div></div>
+          <div class="route-node destination"><span class="node-kind">受保護資源</span><strong id="route-target">salary</strong><span class="node-note">sidecar 執行存取政策</span></div>
+          <div class="policy-branch"><span class="branch-line"></span><div><span class="node-kind">外部授權</span><strong>PE <span id="pe-label">讀取中</span></strong><span class="node-note">mesh-authz → PE → audit</span></div></div>
+        </div>
+        <div class="policy-bar"><span><i class="dot neutral" id="mtls-dot"></i>mTLS <b id="mtls-mode">—</b></span><span>預設拒絕 <b id="default-deny">—</b></span><span>授權依據 <b>ServiceAccount 身分 + 方法 + 路徑</b></span></div>
+
+        <div class="experiment-panel">
+          <div class="scenario-column"><div class="panel-label">選擇情境 <span>8 項</span></div><div id="scenarios" class="scenario-list" aria-label="測試情境"></div><p class="scenario-footnote">單項測試只發送請求，不修改授權政策。</p></div>
+          <div class="request-column">
+            <div class="request-heading"><div><span class="eyebrow">當前情境</span><h3 id="scenario-title">讀取薪資</h3></div><span class="expectation" id="expectation">預期 200</span></div>
+            <p class="scenario-description" id="scenario-description"></p>
+            <div class="request-line"><span class="http-method" id="request-method">GET</span><code id="request-url">http://frontend:8000/api/salary</code></div>
+            <dl class="request-facts"><div><dt>發起身分</dt><dd id="caller-identity">probe</dd></div><div><dt>目標服務</dt><dd id="target-identity">frontend → salary</dd></div></dl>
+            <details class="headers-detail" id="headers-detail" hidden><summary>本次附加的偽造標頭</summary><pre id="request-headers"></pre></details>
+            <div class="action-row"><button class="button primary" id="run-scenario">執行此情境 <span aria-hidden="true">→</span></button><span id="run-message" class="small-muted" aria-live="polite">請求由叢集內的實際工作負載發出</span></div>
+            <div class="response-area" aria-live="polite"><div class="response-top"><span class="panel-label">執行結果</span><span class="small-muted" id="response-time"></span></div><div id="response-placeholder" class="response-placeholder"><span class="empty-mark">↳</span><div>尚未送出請求<small>執行後，這裡會顯示真正的回應與檢查結果。</small></div></div><div id="response-content" hidden><div class="outcome-line"><strong id="response-code"></strong><div><b id="outcome-title"></b><p id="outcome-description"></p></div><span class="outcome-badge" id="outcome-badge"></span></div><pre class="response-body" id="response-body"></pre><div id="full-checks" hidden></div></div></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="journal" aria-labelledby="journal-heading" class="journal-section">
+        <div class="section-heading"><h2 id="journal-heading"><span class="section-number">02</span> 操作紀錄 <span class="count" id="history-count">0</span></h2><button class="text-button" id="export-history">匯出紀錄 ↓</button></div>
+        <div class="table-wrap"><table class="journal-table"><thead><tr><th>時間</th><th>情境</th><th>來源 → 目的</th><th>實際回應</th><th>檢查</th></tr></thead><tbody id="history"><tr><td colspan="5" class="empty-row">尚無操作。紀錄保留於本次伺服器執行期間。</td></tr></tbody></table></div>
+        <details class="audit-section" id="audit-details"><summary>PE 最近的決策紀錄 <span>來自 Context audit</span></summary><div class="audit-toolbar"><p>以下是獨立讀取的稽核事件，不假定與某一次操作一一對應。</p><button class="text-button" id="refresh-audit">重新讀取 ↻</button></div><p class="small-muted" id="audit-message">展開後讀取。</p><div class="table-wrap"><table><thead><tr><th>時間</th><th>來源 → 目的</th><th>請求</th><th>PE 決策</th><th>原因</th></tr></thead><tbody id="audit-events"></tbody></table></div></details>
+      </section>
+
+      <section id="environment" aria-labelledby="environment-heading" class="environment-section"><div class="section-heading"><h2 id="environment-heading"><span class="section-number">03</span> 環境與身分</h2><button class="text-button" id="refresh-status">更新狀態 ↻</button></div><p class="small-muted environment-note" id="environment-note">即時讀取 Kubernetes；無法連線時不顯示成功狀態。</p><div class="environment-grid"><div><div class="table-wrap"><table><thead><tr><th>工作負載</th><th>就緒</th><th>Sidecar</th><th>ServiceAccount</th></tr></thead><tbody id="workloads"></tbody></table></div></div><div class="identity-panel"><div class="identity-heading"><h3>工作負載憑證</h3><button class="text-button" id="load-certificates">讀取憑證 ↗</button></div><p>從代理的有效公開憑證讀取 SPIFFE 身分與期限；不顯示私鑰。</p><div id="certificate-list" class="certificate-list"><div class="identity-example"><span>身分格式</span><code>spiffe://cluster.local<br>/ns/zta-207a/sa/服務名稱</code></div></div></div></div><details class="policy-details"><summary>已套用的 AuthorizationPolicy</summary><pre id="policy-json">尚未讀取</pre></details></section>
+      <footer><span><b>207A</b> · 服務身分與授權實驗</span><p>僅限本機操作員使用。原 207 的 Passkey／PA 流程獨立保留；本頁不代表已完成使用者登入串接。</p></footer>
+    </main>
+  </div>
+  <dialog id="verify-dialog"><form method="dialog"><p class="eyebrow">完整驗證</p><h2>測試拒絕，也測試恢復。</h2><p>會執行 23 項檢查，包含政策撤銷，以及暫停授權服務、PE 和 audit。期間本機 207A 服務會短暫拒絕請求，測試會嘗試自動恢復。</p><p class="dialog-note">請等目前操作結束再執行；不要在測試途中關閉控制程式。</p><div class="dialog-actions"><button class="button quiet" value="cancel">先不用</button><button class="button primary" id="confirm-verify" value="run">開始完整驗證 →</button></div></form></dialog>
+</body>
+</html>

@@ -1,0 +1,396 @@
+{
+  "environment": {
+    "available": true,
+    "observed_at": "2026-10-21T14:44:34.739382+00:00",
+    "context": "kind-zta-207a",
+    "namespace": "zta-207a",
+    "workloads": [
+      {
+        "name": "context",
+        "desired": 1,
+        "ready": 1,
+        "sidecar": true,
+        "service_account": "context"
+      },
+      {
+        "name": "frontend",
+        "desired": 1,
+        "ready": 1,
+        "sidecar": true,
+        "service_account": "frontend"
+      },
+      {
+        "name": "intruder",
+        "desired": 1,
+        "ready": 1,
+        "sidecar": true,
+        "service_account": "intruder"
+      },
+      {
+        "name": "mesh-authz",
+        "desired": 1,
+        "ready": 1,
+        "sidecar": true,
+        "service_account": "mesh-authz"
+      },
+      {
+        "name": "pe",
+        "desired": 1,
+        "ready": 1,
+        "sidecar": true,
+        "service_account": "pe"
+      },
+      {
+        "name": "plaintext",
+        "desired": 1,
+        "ready": 1,
+        "sidecar": false,
+        "service_account": "plaintext"
+      },
+      {
+        "name": "probe",
+        "desired": 1,
+        "ready": 1,
+        "sidecar": true,
+        "service_account": "probe"
+      },
+      {
+        "name": "profile",
+        "desired": 1,
+        "ready": 1,
+        "sidecar": true,
+        "service_account": "profile"
+      },
+      {
+        "name": "salary",
+        "desired": 1,
+        "ready": 1,
+        "sidecar": true,
+        "service_account": "salary"
+      }
+    ],
+    "security": {
+      "mtls": "STRICT",
+      "default_deny": true,
+      "external_authz": true
+    },
+    "policies": [
+      {
+        "name": "authz-to-pe",
+        "action": "ALLOW",
+        "rules": [
+          {
+            "from": [
+              {
+                "source": {
+                  "principals": [
+                    "cluster.local/ns/zta-207a/sa/mesh-authz"
+                  ]
+                }
+              }
+            ],
+            "to": [
+              {
+                "operation": {
+                  "methods": [
+                    "POST"
+                  ],
+                  "paths": [
+                    "/evaluate-service"
+                  ],
+                  "ports": [
+                    "8000"
+                  ]
+                }
+              }
+            ]
+          }
+        ],
+        "selector": {
+          "matchLabels": {
+            "app": "pe"
+          }
+        }
+      },
+      {
+        "name": "backend-external-decision",
+        "action": "CUSTOM",
+        "provider": {
+          "name": "workload-pe"
+        },
+        "rules": [
+          {
+            "to": [
+              {
+                "operation": {
+                  "ports": [
+                    "8000"
+                  ]
+                }
+              }
+            ]
+          }
+        ],
+        "selector": {
+          "matchLabels": {
+            "role": "backend"
+          }
+        }
+      },
+      {
+        "name": "backends-to-authz",
+        "action": "ALLOW",
+        "rules": [
+          {
+            "from": [
+              {
+                "source": {
+                  "principals": [
+                    "cluster.local/ns/zta-207a/sa/salary",
+                    "cluster.local/ns/zta-207a/sa/profile"
+                  ]
+                }
+              }
+            ],
+            "to": [
+              {
+                "operation": {
+                  "ports": [
+                    "9000"
+                  ]
+                }
+              }
+            ]
+          }
+        ],
+        "selector": {
+          "matchLabels": {
+            "app": "mesh-authz"
+          }
+        }
+      },
+      {
+        "name": "default-deny"
+      },
+      {
+        "name": "frontend-to-profile",
+        "action": "ALLOW",
+        "rules": [
+          {
+            "from": [
+              {
+                "source": {
+                  "principals": [
+                    "cluster.local/ns/zta-207a/sa/frontend"
+                  ]
+                }
+              }
+            ],
+            "to": [
+              {
+                "operation": {
+                  "methods": [
+                    "GET"
+                  ],
+                  "paths": [
+                    "/api/profile"
+                  ],
+                  "ports": [
+                    "8000"
+                  ]
+                }
+              }
+            ]
+          }
+        ],
+        "selector": {
+          "matchLabels": {
+            "app": "profile"
+          }
+        }
+      },
+      {
+        "name": "frontend-to-salary",
+        "action": "ALLOW",
+        "rules": [
+          {
+            "from": [
+              {
+                "source": {
+                  "principals": [
+                    "cluster.local/ns/zta-207a/sa/frontend"
+                  ]
+                }
+              }
+            ],
+            "to": [
+              {
+                "operation": {
+                  "methods": [
+                    "GET"
+                  ],
+                  "paths": [
+                    "/api/salary"
+                  ],
+                  "ports": [
+                    "8000"
+                  ]
+                }
+              }
+            ]
+          }
+        ],
+        "selector": {
+          "matchLabels": {
+            "app": "salary"
+          }
+        }
+      },
+      {
+        "name": "pe-to-context",
+        "action": "ALLOW",
+        "rules": [
+          {
+            "from": [
+              {
+                "source": {
+                  "principals": [
+                    "cluster.local/ns/zta-207a/sa/pe"
+                  ]
+                }
+              }
+            ],
+            "to": [
+              {
+                "operation": {
+                  "methods": [
+                    "POST"
+                  ],
+                  "paths": [
+                    "/event"
+                  ],
+                  "ports": [
+                    "8000"
+                  ]
+                }
+              }
+            ]
+          }
+        ],
+        "selector": {
+          "matchLabels": {
+            "app": "context"
+          }
+        }
+      },
+      {
+        "name": "probe-to-frontend",
+        "action": "ALLOW",
+        "rules": [
+          {
+            "from": [
+              {
+                "source": {
+                  "principals": [
+                    "cluster.local/ns/zta-207a/sa/probe"
+                  ]
+                }
+              }
+            ],
+            "to": [
+              {
+                "operation": {
+                  "methods": [
+                    "GET"
+                  ],
+                  "paths": [
+                    "/",
+                    "/api/salary",
+                    "/api/profile"
+                  ],
+                  "ports": [
+                    "8000"
+                  ]
+                }
+              }
+            ]
+          }
+        ],
+        "selector": {
+          "matchLabels": {
+            "app": "frontend"
+          }
+        }
+      }
+    ]
+  },
+  "certificates": {
+    "certificates": [
+      {
+        "app": "context",
+        "uri": "spiffe://cluster.local/ns/zta-207a/sa/context",
+        "not_before": "2026-10-21T14:37:24+00:00",
+        "not_after": "2026-10-21T15:39:24+00:00",
+        "lifetime_seconds": 3720.0
+      },
+      {
+        "app": "frontend",
+        "uri": "spiffe://cluster.local/ns/zta-207a/sa/frontend",
+        "not_before": "2026-10-21T14:18:50+00:00",
+        "not_after": "2026-10-21T15:20:50+00:00",
+        "lifetime_seconds": 3720.0
+      },
+      {
+        "app": "intruder",
+        "uri": "spiffe://cluster.local/ns/zta-207a/sa/intruder",
+        "not_before": "2026-10-21T14:18:49+00:00",
+        "not_after": "2026-10-21T15:20:49+00:00",
+        "lifetime_seconds": 3720.0
+      },
+      {
+        "app": "mesh-authz",
+        "uri": "spiffe://cluster.local/ns/zta-207a/sa/mesh-authz",
+        "not_before": "2026-10-21T14:37:14+00:00",
+        "not_after": "2026-10-21T15:39:14+00:00",
+        "lifetime_seconds": 3720.0
+      },
+      {
+        "app": "pe",
+        "uri": "spiffe://cluster.local/ns/zta-207a/sa/pe",
+        "not_before": "2026-10-21T14:37:19+00:00",
+        "not_after": "2026-10-21T15:39:19+00:00",
+        "lifetime_seconds": 3720.0
+      },
+      {
+        "app": "probe",
+        "uri": "spiffe://cluster.local/ns/zta-207a/sa/probe",
+        "not_before": "2026-10-21T14:18:54+00:00",
+        "not_after": "2026-10-21T15:20:54+00:00",
+        "lifetime_seconds": 3720.0
+      },
+      {
+        "app": "profile",
+        "uri": "spiffe://cluster.local/ns/zta-207a/sa/profile",
+        "not_before": "2026-10-21T14:18:54+00:00",
+        "not_after": "2026-10-21T15:20:54+00:00",
+        "lifetime_seconds": 3720.0
+      },
+      {
+        "app": "salary",
+        "uri": "spiffe://cluster.local/ns/zta-207a/sa/salary",
+        "not_before": "2026-10-21T14:18:54+00:00",
+        "not_after": "2026-10-21T15:20:54+00:00",
+        "lifetime_seconds": 3720.0
+      }
+    ],
+    "observed_at": "2026-10-21T14:44:36.031282+00:00"
+  },
+  "full_verification": {
+    "state": "done",
+    "started_at": "2026-10-21T14:39:03.822306+00:00",
+    "finished_at": "2026-10-21T14:39:28.944986+00:00",
+    "passed": true,
+    "checks": 23
+  },
+  "audit_event_count": 3
+}
