@@ -1,5 +1,10 @@
 # 207 → 207A：Kubernetes / Istio Sidecar Demo
 
+需要中文操作畫面時，完成下列 external authorization 部署後，啟動
+`python scripts/mesh_console.py` 並開啟 http://localhost:18081/。
+[207A 實驗台](207a-console.md) 提供真實情境操作、結果／事件、即時環境與憑證檢視。
+使用實驗台時不需要另外開啟本文後面的 frontend 18081 port-forward。
+
 本擴充保留原本 Compose Demo：Passkey / Device X.509 → Envoy gateway → PA → PE
 與 Dashboard 都維持原路徑。另以獨立 kind cluster `zta-207a` 示範服務間身分與授權，
 不需要搬動原本的 DB、憑證、瀏覽器 Passkey 或正在執行的容器。

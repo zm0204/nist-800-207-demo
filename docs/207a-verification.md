@@ -1,5 +1,29 @@
 # 207A verification evidence
 
+## Interactive console added on 2026-10-21
+
+- Full Python suite: **86 passed** (one existing Starlette/AnyIO deprecation warning).
+- All **8 individual scenarios** were clicked and passed in the actual browser against
+  the existing local Kubernetes cluster; [captured results](evidence/2026-10-21/console-scenarios.json).
+- The browser's full verification button ran the actual external verifier: **23/23 passed**,
+  followed by the parent operator's policy/replica restoration; all 9 Deployments ready.
+  [Fresh verifier evidence](evidence/2026-10-21/mesh-external.json).
+- The certificate button displayed all 8 current public SPIFFE identities; the PE audit
+  panel read actual service decision events from Context.
+- Disposable fault-injection QA on a separate loopback port returned two consecutive
+  polling 503s: the page resumed the original job and showed PASS with exactly one
+  operation, without resubmitting it. A subsequent status-read failure cleared the old
+  green security/workload snapshot and displayed its last observation time.
+- An independent read-only review identified timeout recovery, token-free GET actions,
+  abandoned polling, stale status, and route-label issues. These were addressed; recovery,
+  locking and GET boundaries have failing-then-passing Python regression tests, and the
+  polling/status fixes were exercised in the browser as above.
+- Desktop visual QA passed. Responsive CSS is included; this host's browser viewport
+  override did not actually change the DOM width, so narrow-screen visual QA is **not claimed**.
+
+The new controller is host-side and loopback-only; mesh application images/manifests and
+the original 207 flow are unchanged. [Console operation and recovery guide](207a-console.md).
+
 ## Deployed again on 2026-10-20
 
 The Windows host now runs the dedicated `zta-207a` kind cluster with PE external
