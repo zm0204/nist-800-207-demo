@@ -1,6 +1,18 @@
 const $=id=>document.getElementById(id);
 let csrf='',humanToken='',writeToken='',sessions={},busy=false,lastResult=null;
 const dump=value=>JSON.stringify(value,null,2);
+const navigation=[...document.querySelectorAll('.rail nav a')];
+function syncNavigation(){
+  const current=navigation.find(link=>link.hash===window.location.hash)||navigation[0];
+  for(const link of navigation){
+    const selected=link===current;
+    link.classList.toggle('selected',selected);
+    if(selected)link.setAttribute('aria-current','location');
+    else link.removeAttribute('aria-current');
+  }
+}
+window.addEventListener('hashchange',syncNavigation);
+syncNavigation();
 async function api(path,body,method=body===undefined?'GET':'POST'){
   const response=await fetch(path,{method,headers:{'Content-Type':'application/json','x-mesh-console':csrf},body:body===undefined?undefined:JSON.stringify(body)});
   const data=await response.json();if(!response.ok)throw new Error(data.detail||dump(data));return data;
