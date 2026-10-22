@@ -1,0 +1,3498 @@
+{
+  "started_at": "2026-10-22T11:46:29.771614+00:00",
+  "checks": [
+    {
+      "name": "Device gateway rejects absent client certificate",
+      "passed": true,
+      "client_observation": {
+        "tls_alert": "TLSV13_ALERT_CERTIFICATE_REQUIRED",
+        "backend_trace": "NOT_OBSERVED"
+      }
+    },
+    {
+      "name": "Different device plus forged XFCC cannot create Session",
+      "passed": true,
+      "client_observation": {
+        "status": 403
+      }
+    },
+    {
+      "name": "Alice reads own salary",
+      "passed": true,
+      "attempt_id": "c6af9720-e9f2-4efb-a583-a2f397ff3d53",
+      "stages": [
+        {
+          "component": "device-gateway",
+          "status": "NOT_OBSERVED",
+          "evidence": []
+        },
+        {
+          "component": "frontend",
+          "status": "VERIFIED_PASS",
+          "evidence": [
+            {
+              "component": "frontend",
+              "attempt_id": "c6af9720-e9f2-4efb-a583-a2f397ff3d53",
+              "downstream_peer": null,
+              "downstream_tls": null,
+              "method": "GET",
+              "path": "/api/salary/alice",
+              "request_id": "522157ab-57e9-4437-994a-8e9ed220ec73",
+              "response_code": 200,
+              "response_code_details": "via_upstream",
+              "response_flags": "-",
+              "upstream_cluster": "outbound|8000||salary.zta-identity.svc.cluster.local;",
+              "upstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/salary",
+              "upstream_tls": "TLSv1.3"
+            },
+            {
+              "component": "frontend",
+              "attempt_id": "c6af9720-e9f2-4efb-a583-a2f397ff3d53",
+              "downstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/device-gateway",
+              "downstream_tls": "TLSv1.3",
+              "method": "GET",
+              "path": "/api/salary/alice",
+              "request_id": "522157ab-57e9-4437-994a-8e9ed220ec73",
+              "response_code": 200,
+              "response_code_details": "via_upstream",
+              "response_flags": "-",
+              "upstream_cluster": "inbound|8000||;",
+              "upstream_peer": null,
+              "upstream_tls": null
+            }
+          ]
+        },
+        {
+          "component": "salary",
+          "status": "VERIFIED_PASS",
+          "evidence": [
+            {
+              "component": "salary",
+              "attempt_id": "c6af9720-e9f2-4efb-a583-a2f397ff3d53",
+              "downstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/frontend",
+              "downstream_tls": "TLSv1.3",
+              "method": "GET",
+              "path": "/api/salary/alice",
+              "request_id": "522157ab-57e9-4437-994a-8e9ed220ec73",
+              "response_code": 200,
+              "response_code_details": "via_upstream",
+              "response_flags": "-",
+              "upstream_cluster": "inbound|8000||;",
+              "upstream_peer": null,
+              "upstream_tls": null
+            }
+          ]
+        },
+        {
+          "component": "profile",
+          "status": "NOT_OBSERVED",
+          "evidence": []
+        },
+        {
+          "component": "external_pe",
+          "status": "VERIFIED_PASS",
+          "evidence": [
+            {
+              "kind": "resource_pe_decision",
+              "source": "spiffe://cluster.local/ns/zta-identity/sa/frontend",
+              "destination": "spiffe://cluster.local/ns/zta-identity/sa/salary",
+              "method": "GET",
+              "path": "/api/salary/alice",
+              "attempt_id": "c6af9720-e9f2-4efb-a583-a2f397ff3d53",
+              "request_id": "522157ab-57e9-4437-994a-8e9ed220ec73",
+              "claims": {
+                "iss": "https://zta.example/identity",
+                "aud": "zta-hr",
+                "sub": "alice",
+                "role": "employee",
+                "device_id": "device-a",
+                "scope": "salary:read",
+                "iat": 1792669601,
+                "exp": 1792669721,
+                "auth_time": 1792669591,
+                "jti": "Qx7hH9DXWuM4mddjgfV3_fX_ylasQzEr",
+                "sid": "45893fe60250160c70615cbc4830cef44554e67ba357aaf217912e0cff6b6aba"
+              },
+              "decision": "ALLOW",
+              "reason": "resource_grant_matched",
+              "policy_version": 1,
+              "recent_requests": 0,
+              "quarantined": false,
+              "event_id": 7735,
+              "timestamp": 1792669604.3142936
+            }
+          ]
+        },
+        {
+          "component": "resource",
+          "status": "VERIFIED_PASS",
+          "evidence": [
+            {
+              "kind": "resource_execution",
+              "attempt_id": "c6af9720-e9f2-4efb-a583-a2f397ff3d53",
+              "request_id": "522157ab-57e9-4437-994a-8e9ed220ec73",
+              "subject": "alice",
+              "owner": "alice",
+              "resource": "salary",
+              "method": "GET",
+              "timestamp": 1792669604.32262
+            }
+          ]
+        }
+      ],
+      "execution_query_observed": true,
+      "executions": [
+        {
+          "kind": "resource_execution",
+          "attempt_id": "c6af9720-e9f2-4efb-a583-a2f397ff3d53",
+          "request_id": "522157ab-57e9-4437-994a-8e9ed220ec73",
+          "subject": "alice",
+          "owner": "alice",
+          "resource": "salary",
+          "method": "GET",
+          "timestamp": 1792669604.32262
+        }
+      ],
+      "note": "IDs correlate observations; they are not identity or authorization evidence.",
+      "responses": [
+        {
+          "status": 200,
+          "data": {
+            "resource": "salary",
+            "subject": "alice",
+            "currency": "TWD",
+            "amount": 60000,
+            "synthetic": true
+          },
+          "text": "{\"resource\":\"salary\",\"subject\":\"alice\",\"currency\":\"TWD\",\"amount\":60000,\"synthetic\":true}"
+        }
+      ],
+      "request": {
+        "resource": "salary",
+        "owner": "alice",
+        "method": "GET",
+        "attack": "normal"
+      },
+      "observed_at": "2026-10-22T11:46:49.018000+00:00"
+    },
+    {
+      "name": "Alice reads own profile",
+      "passed": true,
+      "attempt_id": "78dc0f47-d35c-4499-9642-b4a941702629",
+      "stages": [
+        {
+          "component": "device-gateway",
+          "status": "NOT_OBSERVED",
+          "evidence": []
+        },
+        {
+          "component": "frontend",
+          "status": "VERIFIED_PASS",
+          "evidence": [
+            {
+              "component": "frontend",
+              "attempt_id": "78dc0f47-d35c-4499-9642-b4a941702629",
+              "downstream_peer": null,
+              "downstream_tls": null,
+              "method": "GET",
+              "path": "/api/profile/alice",
+              "request_id": "6685d477-cd2d-4afb-ade7-2f0e167d4e1a",
+              "response_code": 200,
+              "response_code_details": "via_upstream",
+              "response_flags": "-",
+              "upstream_cluster": "outbound|8000||profile.zta-identity.svc.cluster.local;",
+              "upstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/profile",
+              "upstream_tls": "TLSv1.3"
+            },
+            {
+              "component": "frontend",
+              "attempt_id": "78dc0f47-d35c-4499-9642-b4a941702629",
+              "downstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/device-gateway",
+              "downstream_tls": "TLSv1.3",
+              "method": "GET",
+              "path": "/api/profile/alice",
+              "request_id": "6685d477-cd2d-4afb-ade7-2f0e167d4e1a",
+              "response_code": 200,
+              "response_code_details": "via_upstream",
+              "response_flags": "-",
+              "upstream_cluster": "inbound|8000||;",
+              "upstream_peer": null,
+              "upstream_tls": null
+            }
+          ]
+        },
+        {
+          "component": "salary",
+          "status": "NOT_OBSERVED",
+          "evidence": []
+        },
+        {
+          "component": "profile",
+          "status": "VERIFIED_PASS",
+          "evidence": [
+            {
+              "component": "profile",
+              "attempt_id": "78dc0f47-d35c-4499-9642-b4a941702629",
+              "downstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/frontend",
+              "downstream_tls": "TLSv1.3",
+              "method": "GET",
+              "path": "/api/profile/alice",
+              "request_id": "6685d477-cd2d-4afb-ade7-2f0e167d4e1a",
+              "response_code": 200,
+              "response_code_details": "via_upstream",
+              "response_flags": "-",
+              "upstream_cluster": "inbound|8000||;",
+              "upstream_peer": null,
+              "upstream_tls": null
+            }
+          ]
+        },
+        {
+          "component": "external_pe",
+          "status": "VERIFIED_PASS",
+          "evidence": [
+            {
+              "kind": "resource_pe_decision",
+              "source": "spiffe://cluster.local/ns/zta-identity/sa/frontend",
+              "destination": "spiffe://cluster.local/ns/zta-identity/sa/profile",
+              "method": "GET",
+              "path": "/api/profile/alice",
+              "attempt_id": "78dc0f47-d35c-4499-9642-b4a941702629",
+              "request_id": "6685d477-cd2d-4afb-ade7-2f0e167d4e1a",
+              "claims": {
+                "iss": "https://zta.example/identity",
+                "aud": "zta-hr",
+                "sub": "alice",
+                "role": "employee",
+                "device_id": "device-a",
+                "scope": "profile:read",
+                "iat": 1792669613,
+                "exp": 1792669733,
+                "auth_time": 1792669591,
+                "jti": "poSmLU72X_JGSe5z2dFwPHXjHWfQ_aCM",
+                "sid": "745b2c5c5a1bd3dfbe462a1e8ba2d11dbd061b617174e40ac28bacc477f6fe8a"
+              },
+              "decision": "ALLOW",
+              "reason": "resource_grant_matched",
+              "policy_version": 1,
+              "recent_requests": 0,
+              "quarantined": false,
+              "event_id": 7755,
+              "timestamp": 1792669615.4212737
+            }
+          ]
+        },
+        {
+          "component": "resource",
+          "status": "VERIFIED_PASS",
+          "evidence": [
+            {
+              "kind": "resource_execution",
+              "attempt_id": "78dc0f47-d35c-4499-9642-b4a941702629",
+              "request_id": "6685d477-cd2d-4afb-ade7-2f0e167d4e1a",
+              "subject": "alice",
+              "owner": "alice",
+              "resource": "profile",
+              "method": "GET",
+              "timestamp": 1792669615.4333792
+            }
+          ]
+        }
+      ],
+      "execution_query_observed": true,
+      "executions": [
+        {
+          "kind": "resource_execution",
+          "attempt_id": "78dc0f47-d35c-4499-9642-b4a941702629",
+          "request_id": "6685d477-cd2d-4afb-ade7-2f0e167d4e1a",
+          "subject": "alice",
+          "owner": "alice",
+          "resource": "profile",
+          "method": "GET",
+          "timestamp": 1792669615.4333792
+        }
+      ],
+      "note": "IDs correlate observations; they are not identity or authorization evidence.",
+      "responses": [
+        {
+          "status": 200,
+          "data": {
+            "resource": "profile",
+            "subject": "alice",
+            "role": "employee",
+            "synthetic": true
+          },
+          "text": "{\"resource\":\"profile\",\"subject\":\"alice\",\"role\":\"employee\",\"synthetic\":true}"
+        }
+      ],
+      "request": {
+        "resource": "profile",
+        "owner": "alice",
+        "method": "GET",
+        "attack": "normal"
+      },
+      "observed_at": "2026-10-22T11:47:00.609760+00:00"
+    },
+    {
+      "name": "Alice cannot read Bob salary",
+      "passed": true,
+      "attempt_id": "1990aed9-c9b6-412a-b926-04eb7ed96212",
+      "stages": [
+        {
+          "component": "device-gateway",
+          "status": "NOT_OBSERVED",
+          "evidence": []
+        },
+        {
+          "component": "frontend",
+          "status": "VERIFIED_PASS",
+          "evidence": [
+            {
+              "component": "frontend",
+              "attempt_id": "1990aed9-c9b6-412a-b926-04eb7ed96212",
+              "downstream_peer": null,
+              "downstream_tls": null,
+              "method": "GET",
+              "path": "/api/salary/bob",
+              "request_id": "40895d2e-0f99-43a7-9537-09e2f4c2d7a6",
+              "response_code": 403,
+              "response_code_details": "via_upstream",
+              "response_flags": "-",
+              "upstream_cluster": "outbound|8000||salary.zta-identity.svc.cluster.local;",
+              "upstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/salary",
+              "upstream_tls": "TLSv1.3"
+            },
+            {
+              "component": "frontend",
+              "attempt_id": "1990aed9-c9b6-412a-b926-04eb7ed96212",
+              "downstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/device-gateway",
+              "downstream_tls": "TLSv1.3",
+              "method": "GET",
+              "path": "/api/salary/bob",
+              "request_id": "40895d2e-0f99-43a7-9537-09e2f4c2d7a6",
+              "response_code": 403,
+              "response_code_details": "via_upstream",
+              "response_flags": "-",
+              "upstream_cluster": "inbound|8000||;",
+              "upstream_peer": null,
+              "upstream_tls": null
+            }
+          ]
+        },
+        {
+          "component": "salary",
+          "status": "VERIFIED_BLOCK",
+          "evidence": [
+            {
+              "component": "salary",
+              "attempt_id": "1990aed9-c9b6-412a-b926-04eb7ed96212",
+              "downstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/frontend",
+              "downstream_tls": "TLSv1.3",
+              "method": "GET",
+              "path": "/api/salary/bob",
+              "request_id": "40895d2e-0f99-43a7-9537-09e2f4c2d7a6",
+              "response_code": 403,
+              "response_code_details": "ext_authz_denied",
+              "response_flags": "UAEX",
+              "upstream_cluster": "inbound|8000||;",
+              "upstream_peer": null,
+              "upstream_tls": null
+            }
+          ]
+        },
+        {
+          "component": "profile",
+          "status": "NOT_OBSERVED",
+          "evidence": []
+        },
+        {
+          "component": "external_pe",
+          "status": "VERIFIED_BLOCK",
+          "evidence": [
+            {
+              "kind": "resource_pe_decision",
+              "source": "spiffe://cluster.local/ns/zta-identity/sa/frontend",
+              "destination": "spiffe://cluster.local/ns/zta-identity/sa/salary",
+              "method": "GET",
+              "path": "/api/salary/bob",
+              "attempt_id": "1990aed9-c9b6-412a-b926-04eb7ed96212",
+              "request_id": "40895d2e-0f99-43a7-9537-09e2f4c2d7a6",
+              "claims": {
+                "iss": "https://zta.example/identity",
+                "aud": "zta-hr",
+                "sub": "alice",
+                "role": "employee",
+                "device_id": "device-a",
+                "scope": "salary:read",
+                "iat": 1792669622,
+                "exp": 1792669742,
+                "auth_time": 1792669591,
+                "jti": "AqUNNj6J0jVNZvbMgVo_X0WiAzgQKJ5R",
+                "sid": "45893fe60250160c70615cbc4830cef44554e67ba357aaf217912e0cff6b6aba"
+              },
+              "decision": "DENY",
+              "reason": "resource_ownership_denied",
+              "policy_version": 1,
+              "recent_requests": 1,
+              "quarantined": false,
+              "event_id": 7777,
+              "timestamp": 1792669625.0192854
+            }
+          ]
+        },
+        {
+          "component": "resource",
+          "status": "NOT_REACHED",
+          "evidence": []
+        }
+      ],
+      "execution_query_observed": true,
+      "executions": [],
+      "note": "IDs correlate observations; they are not identity or authorization evidence.",
+      "responses": [
+        {
+          "status": 403,
+          "data": null,
+          "text": ""
+        }
+      ],
+      "request": {
+        "resource": "salary",
+        "owner": "bob",
+        "method": "GET",
+        "attack": "normal"
+      },
+      "observed_at": "2026-10-22T11:47:10.313996+00:00"
+    },
+    {
+      "name": "Compromised frontend cannot override ownership",
+      "passed": true,
+      "attempt_id": "b7ce8e96-684b-450a-9a4e-f32cd9defe39",
+      "stages": [
+        {
+          "component": "device-gateway",
+          "status": "NOT_OBSERVED",
+          "evidence": []
+        },
+        {
+          "component": "frontend",
+          "status": "VERIFIED_PASS",
+          "evidence": [
+            {
+              "component": "frontend",
+              "attempt_id": "b7ce8e96-684b-450a-9a4e-f32cd9defe39",
+              "downstream_peer": null,
+              "downstream_tls": null,
+              "method": "GET",
+              "path": "/api/salary/bob",
+              "request_id": "27e0b7ad-0c51-4b89-bec0-121e7e457b62",
+              "response_code": 403,
+              "response_code_details": "via_upstream",
+              "response_flags": "-",
+              "upstream_cluster": "outbound|8000||salary.zta-identity.svc.cluster.local;",
+              "upstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/salary",
+              "upstream_tls": "TLSv1.3"
+            }
+          ]
+        },
+        {
+          "component": "salary",
+          "status": "VERIFIED_BLOCK",
+          "evidence": [
+            {
+              "component": "salary",
+              "attempt_id": "b7ce8e96-684b-450a-9a4e-f32cd9defe39",
+              "downstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/frontend",
+              "downstream_tls": "TLSv1.3",
+              "method": "GET",
+              "path": "/api/salary/bob",
+              "request_id": "27e0b7ad-0c51-4b89-bec0-121e7e457b62",
+              "response_code": 403,
+              "response_code_details": "ext_authz_denied",
+              "response_flags": "UAEX",
+              "upstream_cluster": "inbound|8000||;",
+              "upstream_peer": null,
+              "upstream_tls": null
+            }
+          ]
+        },
+        {
+          "component": "profile",
+          "status": "NOT_OBSERVED",
+          "evidence": []
+        },
+        {
+          "component": "external_pe",
+          "status": "VERIFIED_BLOCK",
+          "evidence": [
+            {
+              "kind": "resource_pe_decision",
+              "source": "spiffe://cluster.local/ns/zta-identity/sa/frontend",
+              "destination": "spiffe://cluster.local/ns/zta-identity/sa/salary",
+              "method": "GET",
+              "path": "/api/salary/bob",
+              "attempt_id": "b7ce8e96-684b-450a-9a4e-f32cd9defe39",
+              "request_id": "27e0b7ad-0c51-4b89-bec0-121e7e457b62",
+              "claims": {
+                "iss": "https://zta.example/identity",
+                "aud": "zta-hr",
+                "sub": "alice",
+                "role": "employee",
+                "device_id": "device-a",
+                "scope": "salary:read",
+                "iat": 1792669632,
+                "exp": 1792669752,
+                "auth_time": 1792669591,
+                "jti": "SIB77cgDD7X63rJZQtbLQeyR3PxP8E2E",
+                "sid": "45893fe60250160c70615cbc4830cef44554e67ba357aaf217912e0cff6b6aba"
+              },
+              "decision": "DENY",
+              "reason": "resource_ownership_denied",
+              "policy_version": 1,
+              "recent_requests": 0,
+              "quarantined": false,
+              "event_id": 7795,
+              "timestamp": 1792669632.8495948
+            }
+          ]
+        },
+        {
+          "component": "resource",
+          "status": "NOT_REACHED",
+          "evidence": []
+        }
+      ],
+      "execution_query_observed": true,
+      "executions": [],
+      "note": "IDs correlate observations; they are not identity or authorization evidence.",
+      "responses": [
+        {
+          "status": 403,
+          "data": null,
+          "text": ""
+        }
+      ],
+      "request": {
+        "resource": "salary",
+        "owner": "bob",
+        "method": "GET",
+        "attack": "direct-frontend"
+      },
+      "observed_at": "2026-10-22T11:47:15.435550+00:00"
+    },
+    {
+      "name": "Intruder with legal user JWT blocked by workload policy",
+      "passed": true,
+      "attempt_id": "78fcaaf1-6da6-4747-afc6-3b20e026f29f",
+      "stages": [
+        {
+          "component": "device-gateway",
+          "status": "NOT_OBSERVED",
+          "evidence": []
+        },
+        {
+          "component": "frontend",
+          "status": "NOT_OBSERVED",
+          "evidence": []
+        },
+        {
+          "component": "salary",
+          "status": "VERIFIED_BLOCK",
+          "evidence": [
+            {
+              "component": "salary",
+              "attempt_id": "78fcaaf1-6da6-4747-afc6-3b20e026f29f",
+              "downstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/intruder",
+              "downstream_tls": "TLSv1.3",
+              "method": "GET",
+              "path": "/api/salary/alice",
+              "request_id": "7a575d5b-ea39-4080-9409-a800667d4bcf",
+              "response_code": 403,
+              "response_code_details": "rbac_access_denied_matched_policy[none]",
+              "response_flags": "-",
+              "upstream_cluster": "inbound|8000||;",
+              "upstream_peer": null,
+              "upstream_tls": null
+            }
+          ]
+        },
+        {
+          "component": "profile",
+          "status": "NOT_OBSERVED",
+          "evidence": []
+        },
+        {
+          "component": "external_pe",
+          "status": "VERIFIED_PASS",
+          "evidence": [
+            {
+              "kind": "resource_pe_decision",
+              "source": "spiffe://cluster.local/ns/zta-identity/sa/intruder",
+              "destination": "spiffe://cluster.local/ns/zta-identity/sa/salary",
+              "method": "GET",
+              "path": "/api/salary/alice",
+              "attempt_id": "78fcaaf1-6da6-4747-afc6-3b20e026f29f",
+              "request_id": "7a575d5b-ea39-4080-9409-a800667d4bcf",
+              "claims": {
+                "iss": "https://zta.example/identity",
+                "aud": "zta-hr",
+                "sub": "alice",
+                "role": "employee",
+                "device_id": "device-a",
+                "scope": "salary:read",
+                "iat": 1792669637,
+                "exp": 1792669757,
+                "auth_time": 1792669591,
+                "jti": "PqkwQxqYvAnnBxAjoHB3NYAP4lrtJBqN",
+                "sid": "45893fe60250160c70615cbc4830cef44554e67ba357aaf217912e0cff6b6aba"
+              },
+              "decision": "ALLOW",
+              "reason": "resource_grant_matched",
+              "policy_version": 1,
+              "recent_requests": 0,
+              "quarantined": false,
+              "event_id": 7807,
+              "timestamp": 1792669638.0117917
+            }
+          ]
+        },
+        {
+          "component": "resource",
+          "status": "NOT_REACHED",
+          "evidence": []
+        }
+      ],
+      "execution_query_observed": true,
+      "executions": [],
+      "note": "IDs correlate observations; they are not identity or authorization evidence.",
+      "responses": [
+        {
+          "status": 403,
+          "data": null,
+          "text": "RBAC: access denied"
+        }
+      ],
+      "request": {
+        "resource": "salary",
+        "owner": "alice",
+        "method": "GET",
+        "attack": "intruder"
+      },
+      "observed_at": "2026-10-22T11:47:20.190775+00:00"
+    },
+    {
+      "name": "Forged identity headers do not replace mTLS identity",
+      "passed": true,
+      "attempt_id": "781dbbc9-c656-4c62-9750-e5b1dfdcb034",
+      "stages": [
+        {
+          "component": "device-gateway",
+          "status": "NOT_OBSERVED",
+          "evidence": []
+        },
+        {
+          "component": "frontend",
+          "status": "NOT_OBSERVED",
+          "evidence": []
+        },
+        {
+          "component": "salary",
+          "status": "VERIFIED_BLOCK",
+          "evidence": [
+            {
+              "component": "salary",
+              "attempt_id": "781dbbc9-c656-4c62-9750-e5b1dfdcb034",
+              "downstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/intruder",
+              "downstream_tls": "TLSv1.3",
+              "method": "GET",
+              "path": "/api/salary/alice",
+              "request_id": "201cbadf-2522-4f6e-b033-1a5feb993145",
+              "response_code": 403,
+              "response_code_details": "rbac_access_denied_matched_policy[none]",
+              "response_flags": "-",
+              "upstream_cluster": "inbound|8000||;",
+              "upstream_peer": null,
+              "upstream_tls": null
+            }
+          ]
+        },
+        {
+          "component": "profile",
+          "status": "NOT_OBSERVED",
+          "evidence": []
+        },
+        {
+          "component": "external_pe",
+          "status": "VERIFIED_PASS",
+          "evidence": [
+            {
+              "kind": "resource_pe_decision",
+              "source": "spiffe://cluster.local/ns/zta-identity/sa/intruder",
+              "destination": "spiffe://cluster.local/ns/zta-identity/sa/salary",
+              "method": "GET",
+              "path": "/api/salary/alice",
+              "attempt_id": "781dbbc9-c656-4c62-9750-e5b1dfdcb034",
+              "request_id": "201cbadf-2522-4f6e-b033-1a5feb993145",
+              "claims": {
+                "iss": "https://zta.example/identity",
+                "aud": "zta-hr",
+                "sub": "alice",
+                "role": "employee",
+                "device_id": "device-a",
+                "scope": "salary:read",
+                "iat": 1792669642,
+                "exp": 1792669762,
+                "auth_time": 1792669591,
+                "jti": "6sS2FL-eSU4H9zyZOnMS_l7bYvGivFIT",
+                "sid": "45893fe60250160c70615cbc4830cef44554e67ba357aaf217912e0cff6b6aba"
+              },
+              "decision": "ALLOW",
+              "reason": "resource_grant_matched",
+              "policy_version": 1,
+              "recent_requests": 1,
+              "quarantined": false,
+              "event_id": 7820,
+              "timestamp": 1792669642.795156
+            }
+          ]
+        },
+        {
+          "component": "resource",
+          "status": "NOT_REACHED",
+          "evidence": []
+        }
+      ],
+      "execution_query_observed": true,
+      "executions": [],
+      "note": "IDs correlate observations; they are not identity or authorization evidence.",
+      "responses": [
+        {
+          "status": 403,
+          "data": null,
+          "text": "RBAC: access denied"
+        }
+      ],
+      "request": {
+        "resource": "salary",
+        "owner": "alice",
+        "method": "GET",
+        "attack": "forged-headers"
+      },
+      "observed_at": "2026-10-22T11:47:24.899503+00:00"
+    },
+    {
+      "name": "Missing user JWT",
+      "passed": true,
+      "attempt_id": "f657ef62-0b46-4b0b-8802-5406c1210851",
+      "stages": [
+        {
+          "component": "device-gateway",
+          "status": "NOT_OBSERVED",
+          "evidence": []
+        },
+        {
+          "component": "frontend",
+          "status": "NOT_OBSERVED",
+          "evidence": []
+        },
+        {
+          "component": "salary",
+          "status": "NOT_OBSERVED",
+          "evidence": []
+        },
+        {
+          "component": "profile",
+          "status": "NOT_OBSERVED",
+          "evidence": []
+        },
+        {
+          "component": "external_pe",
+          "status": "NOT_OBSERVED",
+          "evidence": []
+        },
+        {
+          "component": "resource",
+          "status": "NOT_OBSERVED",
+          "evidence": []
+        }
+      ],
+      "execution_query_observed": true,
+      "executions": [],
+      "note": "IDs correlate observations; they are not identity or authorization evidence.",
+      "responses": [
+        {
+          "status": 401,
+          "data": null,
+          "text": "Jwt is missing"
+        }
+      ],
+      "request": {
+        "resource": "salary",
+        "owner": "alice",
+        "method": "GET",
+        "attack": "missing-jwt"
+      },
+      "observed_at": "2026-10-22T11:47:31.631196+00:00"
+    },
+    {
+      "name": "Invalid JWT signature",
+      "passed": true,
+      "attempt_id": "85820f06-291f-471b-9174-26583d93e5b3",
+      "stages": [
+        {
+          "component": "device-gateway",
+          "status": "NOT_OBSERVED",
+          "evidence": []
+        },
+        {
+          "component": "frontend",
+          "status": "NOT_OBSERVED",
+          "evidence": []
+        },
+        {
+          "component": "salary",
+          "status": "NOT_OBSERVED",
+          "evidence": []
+        },
+        {
+          "component": "profile",
+          "status": "NOT_OBSERVED",
+          "evidence": []
+        },
+        {
+          "component": "external_pe",
+          "status": "NOT_OBSERVED",
+          "evidence": []
+        },
+        {
+          "component": "resource",
+          "status": "NOT_OBSERVED",
+          "evidence": []
+        }
+      ],
+      "execution_query_observed": true,
+      "executions": [],
+      "note": "IDs correlate observations; they are not identity or authorization evidence.",
+      "responses": [
+        {
+          "status": 401,
+          "data": null,
+          "text": "Jwt is not in the form of Header.Payload.Signature with two dots and 3 sections"
+        }
+      ],
+      "request": {
+        "resource": "salary",
+        "owner": "alice",
+        "method": "GET",
+        "attack": "invalid-jwt"
+      },
+      "observed_at": "2026-10-22T11:47:38.799905+00:00"
+    },
+    {
+      "name": "Receiving enforcement independently verifies invalid JWT",
+      "passed": true,
+      "attempt_id": "5438ae23-3997-4277-9fee-1d735bc0b68b",
+      "stages": [
+        {
+          "component": "device-gateway",
+          "status": "NOT_OBSERVED",
+          "evidence": []
+        },
+        {
+          "component": "frontend",
+          "status": "NOT_OBSERVED",
+          "evidence": []
+        },
+        {
+          "component": "salary",
+          "status": "VERIFIED_BLOCK",
+          "evidence": [
+            {
+              "component": "salary",
+              "attempt_id": "5438ae23-3997-4277-9fee-1d735bc0b68b",
+              "downstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/frontend",
+              "downstream_tls": "TLSv1.3",
+              "method": "GET",
+              "path": "/api/salary/alice",
+              "request_id": "c54c076f-59ea-43ac-80ed-d2f0f177cfa5",
+              "response_code": 403,
+              "response_code_details": "ext_authz_denied",
+              "response_flags": "UAEX",
+              "upstream_cluster": "inbound|8000||;",
+              "upstream_peer": null,
+              "upstream_tls": null
+            }
+          ]
+        },
+        {
+          "component": "profile",
+          "status": "NOT_OBSERVED",
+          "evidence": []
+        },
+        {
+          "component": "external_pe",
+          "status": "VERIFIED_BLOCK",
+          "evidence": [
+            {
+              "kind": "resource_pe_decision",
+              "source": "spiffe://cluster.local/ns/zta-identity/sa/frontend",
+              "destination": "spiffe://cluster.local/ns/zta-identity/sa/salary",
+              "method": "GET",
+              "path": "/api/salary/alice",
+              "attempt_id": "5438ae23-3997-4277-9fee-1d735bc0b68b",
+              "request_id": "c54c076f-59ea-43ac-80ed-d2f0f177cfa5",
+              "decision": "DENY",
+              "reason": "invalid_user_token",
+              "event_id": 7850,
+              "timestamp": 1792669659.0720665
+            }
+          ]
+        },
+        {
+          "component": "resource",
+          "status": "NOT_REACHED",
+          "evidence": []
+        }
+      ],
+      "execution_query_observed": true,
+      "executions": [],
+      "note": "IDs correlate observations; they are not identity or authorization evidence.",
+      "responses": [
+        {
+          "status": 403,
+          "data": null,
+          "text": ""
+        }
+      ],
+      "request": {
+        "resource": "salary",
+        "owner": "alice",
+        "method": "GET",
+        "attack": "direct-frontend"
+      },
+      "observed_at": "2026-10-22T11:47:41.219742+00:00"
+    },
+    {
+      "name": "Expired JWT",
+      "passed": true,
+      "attempt_id": "99b3ae9c-5d41-48bf-8198-a36734b6b34a",
+      "stages": [
+        {
+          "component": "device-gateway",
+          "status": "NOT_OBSERVED",
+          "evidence": []
+        },
+        {
+          "component": "frontend",
+          "status": "NOT_OBSERVED",
+          "evidence": []
+        },
+        {
+          "component": "salary",
+          "status": "NOT_OBSERVED",
+          "evidence": []
+        },
+        {
+          "component": "profile",
+          "status": "NOT_OBSERVED",
+          "evidence": []
+        },
+        {
+          "component": "external_pe",
+          "status": "NOT_OBSERVED",
+          "evidence": []
+        },
+        {
+          "component": "resource",
+          "status": "NOT_OBSERVED",
+          "evidence": []
+        }
+      ],
+      "execution_query_observed": true,
+      "executions": [],
+      "note": "IDs correlate observations; they are not identity or authorization evidence.",
+      "responses": [
+        {
+          "status": 401,
+          "data": null,
+          "text": "Jwt is expired"
+        }
+      ],
+      "request": {
+        "resource": "salary",
+        "owner": "alice",
+        "method": "GET",
+        "attack": "normal"
+      },
+      "observed_at": "2026-10-22T11:47:50.196552+00:00"
+    },
+    {
+      "name": "Wrong audience JWT",
+      "passed": true,
+      "attempt_id": "0984b512-dfac-4c0a-8ae7-d8e8c3f9f3da",
+      "stages": [
+        {
+          "component": "device-gateway",
+          "status": "NOT_OBSERVED",
+          "evidence": []
+        },
+        {
+          "component": "frontend",
+          "status": "NOT_OBSERVED",
+          "evidence": []
+        },
+        {
+          "component": "salary",
+          "status": "NOT_OBSERVED",
+          "evidence": []
+        },
+        {
+          "component": "profile",
+          "status": "NOT_OBSERVED",
+          "evidence": []
+        },
+        {
+          "component": "external_pe",
+          "status": "NOT_OBSERVED",
+          "evidence": []
+        },
+        {
+          "component": "resource",
+          "status": "NOT_OBSERVED",
+          "evidence": []
+        }
+      ],
+      "execution_query_observed": true,
+      "executions": [],
+      "note": "IDs correlate observations; they are not identity or authorization evidence.",
+      "responses": [
+        {
+          "status": 403,
+          "data": null,
+          "text": "Audiences in Jwt are not allowed"
+        }
+      ],
+      "request": {
+        "resource": "salary",
+        "owner": "alice",
+        "method": "GET",
+        "attack": "normal"
+      },
+      "observed_at": "2026-10-22T11:47:57.400839+00:00"
+    },
+    {
+      "name": "Wrong issuer JWT",
+      "passed": true,
+      "attempt_id": "f82bf185-b032-41e6-82d0-3417a8d4cc9f",
+      "stages": [
+        {
+          "component": "device-gateway",
+          "status": "VERIFIED_BLOCK",
+          "evidence": [
+            {
+              "component": "device-gateway",
+              "attempt_id": "f82bf185-b032-41e6-82d0-3417a8d4cc9f",
+              "downstream_peer": "urn:zta:device:device-a",
+              "downstream_tls": "TLSv1.3",
+              "method": "GET",
+              "path": "/api/salary/alice",
+              "request_id": "7eb1c90e-bc75-4cc3-a4d0-868e50d78243",
+              "response_code": 401,
+              "response_code_details": "jwt_authn_access_denied{Jwt_issuer_is_not_configured}",
+              "response_flags": "-",
+              "upstream_cluster": "frontend",
+              "upstream_peer": null,
+              "upstream_tls": null
+            }
+          ]
+        },
+        {
+          "component": "frontend",
+          "status": "NOT_OBSERVED",
+          "evidence": []
+        },
+        {
+          "component": "salary",
+          "status": "NOT_OBSERVED",
+          "evidence": []
+        },
+        {
+          "component": "profile",
+          "status": "NOT_OBSERVED",
+          "evidence": []
+        },
+        {
+          "component": "external_pe",
+          "status": "NOT_OBSERVED",
+          "evidence": []
+        },
+        {
+          "component": "resource",
+          "status": "NOT_REACHED",
+          "evidence": []
+        }
+      ],
+      "execution_query_observed": true,
+      "executions": [],
+      "note": "IDs correlate observations; they are not identity or authorization evidence.",
+      "responses": [
+        {
+          "status": 401,
+          "data": null,
+          "text": "Jwt issuer is not configured"
+        }
+      ],
+      "request": {
+        "resource": "salary",
+        "owner": "alice",
+        "method": "GET",
+        "attack": "normal"
+      },
+      "observed_at": "2026-10-22T11:48:04.622238+00:00"
+    },
+    {
+      "name": "Plaintext caller cannot reach resource",
+      "passed": true,
+      "attempt_id": "b7e05fa6-67c6-4bde-ac96-5c924aa60a6e",
+      "stages": [
+        {
+          "component": "device-gateway",
+          "status": "NOT_OBSERVED",
+          "evidence": []
+        },
+        {
+          "component": "frontend",
+          "status": "NOT_OBSERVED",
+          "evidence": []
+        },
+        {
+          "component": "salary",
+          "status": "NOT_OBSERVED",
+          "evidence": []
+        },
+        {
+          "component": "profile",
+          "status": "NOT_OBSERVED",
+          "evidence": []
+        },
+        {
+          "component": "external_pe",
+          "status": "NOT_OBSERVED",
+          "evidence": []
+        },
+        {
+          "component": "resource",
+          "status": "NOT_OBSERVED",
+          "evidence": []
+        }
+      ],
+      "execution_query_observed": true,
+      "executions": [],
+      "note": "IDs correlate observations; they are not identity or authorization evidence.",
+      "responses": [
+        {
+          "status": 0,
+          "error": "ReadError"
+        }
+      ],
+      "request": {
+        "resource": "salary",
+        "owner": "alice",
+        "method": "GET",
+        "attack": "plaintext"
+      },
+      "observed_at": "2026-10-22T11:48:07.191372+00:00"
+    },
+    {
+      "name": "Bob accesses assigned employee",
+      "passed": true,
+      "attempt_id": "6de67867-8c8d-43f7-9a95-439b66b6baea",
+      "stages": [
+        {
+          "component": "device-gateway",
+          "status": "NOT_OBSERVED",
+          "evidence": []
+        },
+        {
+          "component": "frontend",
+          "status": "VERIFIED_PASS",
+          "evidence": [
+            {
+              "component": "frontend",
+              "attempt_id": "6de67867-8c8d-43f7-9a95-439b66b6baea",
+              "downstream_peer": null,
+              "downstream_tls": null,
+              "method": "GET",
+              "path": "/api/salary/alice",
+              "request_id": "f9769562-7217-4c83-88bb-a9c8729e008c",
+              "response_code": 200,
+              "response_code_details": "via_upstream",
+              "response_flags": "-",
+              "upstream_cluster": "outbound|8000||salary.zta-identity.svc.cluster.local;",
+              "upstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/salary",
+              "upstream_tls": "TLSv1.3"
+            },
+            {
+              "component": "frontend",
+              "attempt_id": "6de67867-8c8d-43f7-9a95-439b66b6baea",
+              "downstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/device-gateway",
+              "downstream_tls": "TLSv1.3",
+              "method": "GET",
+              "path": "/api/salary/alice",
+              "request_id": "f9769562-7217-4c83-88bb-a9c8729e008c",
+              "response_code": 200,
+              "response_code_details": "via_upstream",
+              "response_flags": "-",
+              "upstream_cluster": "inbound|8000||;",
+              "upstream_peer": null,
+              "upstream_tls": null
+            }
+          ]
+        },
+        {
+          "component": "salary",
+          "status": "VERIFIED_PASS",
+          "evidence": [
+            {
+              "component": "salary",
+              "attempt_id": "6de67867-8c8d-43f7-9a95-439b66b6baea",
+              "downstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/frontend",
+              "downstream_tls": "TLSv1.3",
+              "method": "GET",
+              "path": "/api/salary/alice",
+              "request_id": "f9769562-7217-4c83-88bb-a9c8729e008c",
+              "response_code": 200,
+              "response_code_details": "via_upstream",
+              "response_flags": "-",
+              "upstream_cluster": "inbound|8000||;",
+              "upstream_peer": null,
+              "upstream_tls": null
+            }
+          ]
+        },
+        {
+          "component": "profile",
+          "status": "NOT_OBSERVED",
+          "evidence": []
+        },
+        {
+          "component": "external_pe",
+          "status": "VERIFIED_PASS",
+          "evidence": [
+            {
+              "kind": "resource_pe_decision",
+              "source": "spiffe://cluster.local/ns/zta-identity/sa/frontend",
+              "destination": "spiffe://cluster.local/ns/zta-identity/sa/salary",
+              "method": "GET",
+              "path": "/api/salary/alice",
+              "attempt_id": "6de67867-8c8d-43f7-9a95-439b66b6baea",
+              "request_id": "f9769562-7217-4c83-88bb-a9c8729e008c",
+              "claims": {
+                "iss": "https://zta.example/identity",
+                "aud": "zta-hr",
+                "sub": "bob",
+                "role": "hr",
+                "device_id": "device-a",
+                "scope": "salary:read",
+                "iat": 1792669691,
+                "exp": 1792669811,
+                "auth_time": 1792669591,
+                "jti": "s_k_sa5vhA4CRRsUh4Ej121Ek6AxJ8ol",
+                "sid": "f1bd29fe6f96badbe2daba97a9ae7e345987a2b0f6f5ad7a84a67247e3693fbe"
+              },
+              "decision": "ALLOW",
+              "reason": "resource_grant_matched",
+              "policy_version": 1,
+              "recent_requests": 0,
+              "quarantined": false,
+              "event_id": 7923,
+              "timestamp": 1792669693.72812
+            }
+          ]
+        },
+        {
+          "component": "resource",
+          "status": "VERIFIED_PASS",
+          "evidence": [
+            {
+              "kind": "resource_execution",
+              "attempt_id": "6de67867-8c8d-43f7-9a95-439b66b6baea",
+              "request_id": "f9769562-7217-4c83-88bb-a9c8729e008c",
+              "subject": "bob",
+              "owner": "alice",
+              "resource": "salary",
+              "method": "GET",
+              "timestamp": 1792669693.7357173
+            }
+          ]
+        }
+      ],
+      "execution_query_observed": true,
+      "executions": [
+        {
+          "kind": "resource_execution",
+          "attempt_id": "6de67867-8c8d-43f7-9a95-439b66b6baea",
+          "request_id": "f9769562-7217-4c83-88bb-a9c8729e008c",
+          "subject": "bob",
+          "owner": "alice",
+          "resource": "salary",
+          "method": "GET",
+          "timestamp": 1792669693.7357173
+        }
+      ],
+      "note": "IDs correlate observations; they are not identity or authorization evidence.",
+      "responses": [
+        {
+          "status": 200,
+          "data": {
+            "resource": "salary",
+            "subject": "alice",
+            "currency": "TWD",
+            "amount": 60000,
+            "synthetic": true
+          },
+          "text": "{\"resource\":\"salary\",\"subject\":\"alice\",\"currency\":\"TWD\",\"amount\":60000,\"synthetic\":true}"
+        }
+      ],
+      "request": {
+        "resource": "salary",
+        "owner": "alice",
+        "method": "GET",
+        "attack": "normal"
+      },
+      "observed_at": "2026-10-22T11:48:18.425304+00:00"
+    },
+    {
+      "name": "Bob cannot access out-of-scope employee",
+      "passed": true,
+      "attempt_id": "9fad51a6-7d5b-4c81-93a4-2a8aaf4bcf04",
+      "stages": [
+        {
+          "component": "device-gateway",
+          "status": "NOT_OBSERVED",
+          "evidence": []
+        },
+        {
+          "component": "frontend",
+          "status": "VERIFIED_PASS",
+          "evidence": [
+            {
+              "component": "frontend",
+              "attempt_id": "9fad51a6-7d5b-4c81-93a4-2a8aaf4bcf04",
+              "downstream_peer": null,
+              "downstream_tls": null,
+              "method": "GET",
+              "path": "/api/salary/carol",
+              "request_id": "3aef46e6-aaba-4858-95f4-ce3fffc7461d",
+              "response_code": 403,
+              "response_code_details": "via_upstream",
+              "response_flags": "-",
+              "upstream_cluster": "outbound|8000||salary.zta-identity.svc.cluster.local;",
+              "upstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/salary",
+              "upstream_tls": "TLSv1.3"
+            },
+            {
+              "component": "frontend",
+              "attempt_id": "9fad51a6-7d5b-4c81-93a4-2a8aaf4bcf04",
+              "downstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/device-gateway",
+              "downstream_tls": "TLSv1.3",
+              "method": "GET",
+              "path": "/api/salary/carol",
+              "request_id": "3aef46e6-aaba-4858-95f4-ce3fffc7461d",
+              "response_code": 403,
+              "response_code_details": "via_upstream",
+              "response_flags": "-",
+              "upstream_cluster": "inbound|8000||;",
+              "upstream_peer": null,
+              "upstream_tls": null
+            }
+          ]
+        },
+        {
+          "component": "salary",
+          "status": "VERIFIED_BLOCK",
+          "evidence": [
+            {
+              "component": "salary",
+              "attempt_id": "9fad51a6-7d5b-4c81-93a4-2a8aaf4bcf04",
+              "downstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/frontend",
+              "downstream_tls": "TLSv1.3",
+              "method": "GET",
+              "path": "/api/salary/carol",
+              "request_id": "3aef46e6-aaba-4858-95f4-ce3fffc7461d",
+              "response_code": 403,
+              "response_code_details": "ext_authz_denied",
+              "response_flags": "UAEX",
+              "upstream_cluster": "inbound|8000||;",
+              "upstream_peer": null,
+              "upstream_tls": null
+            }
+          ]
+        },
+        {
+          "component": "profile",
+          "status": "NOT_OBSERVED",
+          "evidence": []
+        },
+        {
+          "component": "external_pe",
+          "status": "VERIFIED_BLOCK",
+          "evidence": [
+            {
+              "kind": "resource_pe_decision",
+              "source": "spiffe://cluster.local/ns/zta-identity/sa/frontend",
+              "destination": "spiffe://cluster.local/ns/zta-identity/sa/salary",
+              "method": "GET",
+              "path": "/api/salary/carol",
+              "attempt_id": "9fad51a6-7d5b-4c81-93a4-2a8aaf4bcf04",
+              "request_id": "3aef46e6-aaba-4858-95f4-ce3fffc7461d",
+              "claims": {
+                "iss": "https://zta.example/identity",
+                "aud": "zta-hr",
+                "sub": "bob",
+                "role": "hr",
+                "device_id": "device-a",
+                "scope": "salary:read",
+                "iat": 1792669700,
+                "exp": 1792669820,
+                "auth_time": 1792669591,
+                "jti": "WRqBW8EThvaZmDjS7diVAeldGGQYABJX",
+                "sid": "f1bd29fe6f96badbe2daba97a9ae7e345987a2b0f6f5ad7a84a67247e3693fbe"
+              },
+              "decision": "DENY",
+              "reason": "resource_ownership_denied",
+              "policy_version": 1,
+              "recent_requests": 1,
+              "quarantined": false,
+              "event_id": 7951,
+              "timestamp": 1792669702.753749
+            }
+          ]
+        },
+        {
+          "component": "resource",
+          "status": "NOT_REACHED",
+          "evidence": []
+        }
+      ],
+      "execution_query_observed": true,
+      "executions": [],
+      "note": "IDs correlate observations; they are not identity or authorization evidence.",
+      "responses": [
+        {
+          "status": 403,
+          "data": null,
+          "text": ""
+        }
+      ],
+      "request": {
+        "resource": "salary",
+        "owner": "carol",
+        "method": "GET",
+        "attack": "normal"
+      },
+      "observed_at": "2026-10-22T11:48:27.389581+00:00"
+    },
+    {
+      "name": "Sensitive salary adjustment with fresh WebAuthn and short scope",
+      "passed": true,
+      "attempt_id": "864064da-21cd-4253-ad25-04d889325957",
+      "stages": [
+        {
+          "component": "device-gateway",
+          "status": "NOT_OBSERVED",
+          "evidence": []
+        },
+        {
+          "component": "frontend",
+          "status": "VERIFIED_PASS",
+          "evidence": [
+            {
+              "component": "frontend",
+              "attempt_id": "864064da-21cd-4253-ad25-04d889325957",
+              "downstream_peer": null,
+              "downstream_tls": null,
+              "method": "POST",
+              "path": "/api/salary/alice/adjust",
+              "request_id": "54cd29c4-2f86-4f19-a787-0b5837184edd",
+              "response_code": 200,
+              "response_code_details": "via_upstream",
+              "response_flags": "-",
+              "upstream_cluster": "outbound|8000||salary.zta-identity.svc.cluster.local;",
+              "upstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/salary",
+              "upstream_tls": "TLSv1.3"
+            },
+            {
+              "component": "frontend",
+              "attempt_id": "864064da-21cd-4253-ad25-04d889325957",
+              "downstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/device-gateway",
+              "downstream_tls": "TLSv1.3",
+              "method": "POST",
+              "path": "/api/salary/alice/adjust",
+              "request_id": "54cd29c4-2f86-4f19-a787-0b5837184edd",
+              "response_code": 200,
+              "response_code_details": "via_upstream",
+              "response_flags": "-",
+              "upstream_cluster": "inbound|8000||;",
+              "upstream_peer": null,
+              "upstream_tls": null
+            }
+          ]
+        },
+        {
+          "component": "salary",
+          "status": "VERIFIED_PASS",
+          "evidence": [
+            {
+              "component": "salary",
+              "attempt_id": "864064da-21cd-4253-ad25-04d889325957",
+              "downstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/frontend",
+              "downstream_tls": "TLSv1.3",
+              "method": "POST",
+              "path": "/api/salary/alice/adjust",
+              "request_id": "54cd29c4-2f86-4f19-a787-0b5837184edd",
+              "response_code": 200,
+              "response_code_details": "via_upstream",
+              "response_flags": "-",
+              "upstream_cluster": "inbound|8000||;",
+              "upstream_peer": null,
+              "upstream_tls": null
+            }
+          ]
+        },
+        {
+          "component": "profile",
+          "status": "NOT_OBSERVED",
+          "evidence": []
+        },
+        {
+          "component": "external_pe",
+          "status": "VERIFIED_PASS",
+          "evidence": [
+            {
+              "kind": "resource_pe_decision",
+              "source": "spiffe://cluster.local/ns/zta-identity/sa/frontend",
+              "destination": "spiffe://cluster.local/ns/zta-identity/sa/salary",
+              "method": "POST",
+              "path": "/api/salary/alice/adjust",
+              "attempt_id": "864064da-21cd-4253-ad25-04d889325957",
+              "request_id": "54cd29c4-2f86-4f19-a787-0b5837184edd",
+              "claims": {
+                "iss": "https://zta.example/identity",
+                "aud": "zta-hr",
+                "sub": "bob",
+                "role": "hr",
+                "device_id": "device-a",
+                "scope": "salary:write",
+                "iat": 1792669711,
+                "exp": 1792669741,
+                "auth_time": 1792669707,
+                "jti": "SkFiCKAPDZHgWoTCxQ8XBzP7QWzRr9oW",
+                "sid": "0c78db7caa8f107998dce7f58b08be642f55f3b0cc8c7557c9e74b260cc8ca45"
+              },
+              "decision": "ALLOW",
+              "reason": "resource_grant_matched",
+              "policy_version": 1,
+              "recent_requests": 0,
+              "quarantined": false,
+              "event_id": 7986,
+              "timestamp": 1792669714.2033718
+            }
+          ]
+        },
+        {
+          "component": "resource",
+          "status": "VERIFIED_PASS",
+          "evidence": [
+            {
+              "kind": "resource_execution",
+              "attempt_id": "864064da-21cd-4253-ad25-04d889325957",
+              "request_id": "54cd29c4-2f86-4f19-a787-0b5837184edd",
+              "subject": "bob",
+              "owner": "alice",
+              "resource": "salary",
+              "method": "POST",
+              "timestamp": 1792669714.2108843
+            }
+          ]
+        }
+      ],
+      "execution_query_observed": true,
+      "executions": [
+        {
+          "kind": "resource_execution",
+          "attempt_id": "864064da-21cd-4253-ad25-04d889325957",
+          "request_id": "54cd29c4-2f86-4f19-a787-0b5837184edd",
+          "subject": "bob",
+          "owner": "alice",
+          "resource": "salary",
+          "method": "POST",
+          "timestamp": 1792669714.2108843
+        }
+      ],
+      "note": "IDs correlate observations; they are not identity or authorization evidence.",
+      "responses": [
+        {
+          "status": 200,
+          "data": {
+            "resource": "salary",
+            "subject": "alice",
+            "amount": 60000,
+            "synthetic": true,
+            "adjusted": true
+          },
+          "text": "{\"resource\":\"salary\",\"subject\":\"alice\",\"amount\":60000,\"synthetic\":true,\"adjusted\":true}"
+        }
+      ],
+      "request": {
+        "resource": "salary",
+        "owner": "alice",
+        "method": "POST",
+        "attack": "normal"
+      },
+      "observed_at": "2026-10-22T11:48:38.924011+00:00"
+    },
+    {
+      "name": "HR rate feedback creates persistent quarantine",
+      "passed": true,
+      "attempt_id": "14612cd1-8af9-401e-a01a-87f1078a7f4a",
+      "stages": [
+        {
+          "component": "device-gateway",
+          "status": "NOT_OBSERVED",
+          "evidence": []
+        },
+        {
+          "component": "frontend",
+          "status": "VERIFIED_PASS",
+          "evidence": [
+            {
+              "component": "frontend",
+              "attempt_id": "14612cd1-8af9-401e-a01a-87f1078a7f4a",
+              "downstream_peer": null,
+              "downstream_tls": null,
+              "method": "GET",
+              "path": "/api/salary/alice",
+              "request_id": "7d1ece9f-e527-484d-bc92-9efa3b446159",
+              "response_code": 200,
+              "response_code_details": "via_upstream",
+              "response_flags": "-",
+              "upstream_cluster": "outbound|8000||salary.zta-identity.svc.cluster.local;",
+              "upstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/salary",
+              "upstream_tls": "TLSv1.3"
+            },
+            {
+              "component": "frontend",
+              "attempt_id": "14612cd1-8af9-401e-a01a-87f1078a7f4a",
+              "downstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/device-gateway",
+              "downstream_tls": "TLSv1.3",
+              "method": "GET",
+              "path": "/api/salary/alice",
+              "request_id": "7d1ece9f-e527-484d-bc92-9efa3b446159",
+              "response_code": 200,
+              "response_code_details": "via_upstream",
+              "response_flags": "-",
+              "upstream_cluster": "inbound|8000||;",
+              "upstream_peer": null,
+              "upstream_tls": null
+            },
+            {
+              "component": "frontend",
+              "attempt_id": "14612cd1-8af9-401e-a01a-87f1078a7f4a",
+              "downstream_peer": null,
+              "downstream_tls": null,
+              "method": "GET",
+              "path": "/api/salary/alice",
+              "request_id": "d15d5a13-5c35-453a-970f-043f7b9439d5",
+              "response_code": 200,
+              "response_code_details": "via_upstream",
+              "response_flags": "-",
+              "upstream_cluster": "outbound|8000||salary.zta-identity.svc.cluster.local;",
+              "upstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/salary",
+              "upstream_tls": "TLSv1.3"
+            },
+            {
+              "component": "frontend",
+              "attempt_id": "14612cd1-8af9-401e-a01a-87f1078a7f4a",
+              "downstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/device-gateway",
+              "downstream_tls": "TLSv1.3",
+              "method": "GET",
+              "path": "/api/salary/alice",
+              "request_id": "d15d5a13-5c35-453a-970f-043f7b9439d5",
+              "response_code": 200,
+              "response_code_details": "via_upstream",
+              "response_flags": "-",
+              "upstream_cluster": "inbound|8000||;",
+              "upstream_peer": null,
+              "upstream_tls": null
+            },
+            {
+              "component": "frontend",
+              "attempt_id": "14612cd1-8af9-401e-a01a-87f1078a7f4a",
+              "downstream_peer": null,
+              "downstream_tls": null,
+              "method": "GET",
+              "path": "/api/salary/alice",
+              "request_id": "32b59e83-1d00-4565-8634-cdaba761ee63",
+              "response_code": 200,
+              "response_code_details": "via_upstream",
+              "response_flags": "-",
+              "upstream_cluster": "outbound|8000||salary.zta-identity.svc.cluster.local;",
+              "upstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/salary",
+              "upstream_tls": "TLSv1.3"
+            },
+            {
+              "component": "frontend",
+              "attempt_id": "14612cd1-8af9-401e-a01a-87f1078a7f4a",
+              "downstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/device-gateway",
+              "downstream_tls": "TLSv1.3",
+              "method": "GET",
+              "path": "/api/salary/alice",
+              "request_id": "32b59e83-1d00-4565-8634-cdaba761ee63",
+              "response_code": 200,
+              "response_code_details": "via_upstream",
+              "response_flags": "-",
+              "upstream_cluster": "inbound|8000||;",
+              "upstream_peer": null,
+              "upstream_tls": null
+            },
+            {
+              "component": "frontend",
+              "attempt_id": "14612cd1-8af9-401e-a01a-87f1078a7f4a",
+              "downstream_peer": null,
+              "downstream_tls": null,
+              "method": "GET",
+              "path": "/api/salary/alice",
+              "request_id": "6b3b4e30-572d-422d-b8ad-7b9c8a4b0799",
+              "response_code": 200,
+              "response_code_details": "via_upstream",
+              "response_flags": "-",
+              "upstream_cluster": "outbound|8000||salary.zta-identity.svc.cluster.local;",
+              "upstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/salary",
+              "upstream_tls": "TLSv1.3"
+            },
+            {
+              "component": "frontend",
+              "attempt_id": "14612cd1-8af9-401e-a01a-87f1078a7f4a",
+              "downstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/device-gateway",
+              "downstream_tls": "TLSv1.3",
+              "method": "GET",
+              "path": "/api/salary/alice",
+              "request_id": "6b3b4e30-572d-422d-b8ad-7b9c8a4b0799",
+              "response_code": 200,
+              "response_code_details": "via_upstream",
+              "response_flags": "-",
+              "upstream_cluster": "inbound|8000||;",
+              "upstream_peer": null,
+              "upstream_tls": null
+            },
+            {
+              "component": "frontend",
+              "attempt_id": "14612cd1-8af9-401e-a01a-87f1078a7f4a",
+              "downstream_peer": null,
+              "downstream_tls": null,
+              "method": "GET",
+              "path": "/api/salary/alice",
+              "request_id": "e9dd3271-c990-4ecf-90b6-b221861b7204",
+              "response_code": 403,
+              "response_code_details": "via_upstream",
+              "response_flags": "-",
+              "upstream_cluster": "outbound|8000||salary.zta-identity.svc.cluster.local;",
+              "upstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/salary",
+              "upstream_tls": "TLSv1.3"
+            },
+            {
+              "component": "frontend",
+              "attempt_id": "14612cd1-8af9-401e-a01a-87f1078a7f4a",
+              "downstream_peer": null,
+              "downstream_tls": null,
+              "method": "GET",
+              "path": "/api/salary/alice",
+              "request_id": "0e12811e-86c9-4654-8203-d1b209da17cc",
+              "response_code": 200,
+              "response_code_details": "via_upstream",
+              "response_flags": "-",
+              "upstream_cluster": "outbound|8000||salary.zta-identity.svc.cluster.local;",
+              "upstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/salary",
+              "upstream_tls": "TLSv1.3"
+            },
+            {
+              "component": "frontend",
+              "attempt_id": "14612cd1-8af9-401e-a01a-87f1078a7f4a",
+              "downstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/device-gateway",
+              "downstream_tls": "TLSv1.3",
+              "method": "GET",
+              "path": "/api/salary/alice",
+              "request_id": "e9dd3271-c990-4ecf-90b6-b221861b7204",
+              "response_code": 403,
+              "response_code_details": "via_upstream",
+              "response_flags": "-",
+              "upstream_cluster": "inbound|8000||;",
+              "upstream_peer": null,
+              "upstream_tls": null
+            },
+            {
+              "component": "frontend",
+              "attempt_id": "14612cd1-8af9-401e-a01a-87f1078a7f4a",
+              "downstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/device-gateway",
+              "downstream_tls": "TLSv1.3",
+              "method": "GET",
+              "path": "/api/salary/alice",
+              "request_id": "0e12811e-86c9-4654-8203-d1b209da17cc",
+              "response_code": 200,
+              "response_code_details": "via_upstream",
+              "response_flags": "-",
+              "upstream_cluster": "inbound|8000||;",
+              "upstream_peer": null,
+              "upstream_tls": null
+            },
+            {
+              "component": "frontend",
+              "attempt_id": "14612cd1-8af9-401e-a01a-87f1078a7f4a",
+              "downstream_peer": null,
+              "downstream_tls": null,
+              "method": "GET",
+              "path": "/api/salary/alice",
+              "request_id": "360c1a56-dbce-4334-81ec-fd2903cf5535",
+              "response_code": 403,
+              "response_code_details": "via_upstream",
+              "response_flags": "-",
+              "upstream_cluster": "outbound|8000||salary.zta-identity.svc.cluster.local;",
+              "upstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/salary",
+              "upstream_tls": "TLSv1.3"
+            },
+            {
+              "component": "frontend",
+              "attempt_id": "14612cd1-8af9-401e-a01a-87f1078a7f4a",
+              "downstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/device-gateway",
+              "downstream_tls": "TLSv1.3",
+              "method": "GET",
+              "path": "/api/salary/alice",
+              "request_id": "360c1a56-dbce-4334-81ec-fd2903cf5535",
+              "response_code": 403,
+              "response_code_details": "via_upstream",
+              "response_flags": "-",
+              "upstream_cluster": "inbound|8000||;",
+              "upstream_peer": null,
+              "upstream_tls": null
+            },
+            {
+              "component": "frontend",
+              "attempt_id": "14612cd1-8af9-401e-a01a-87f1078a7f4a",
+              "downstream_peer": null,
+              "downstream_tls": null,
+              "method": "GET",
+              "path": "/api/salary/alice",
+              "request_id": "a31a413a-7917-4ea8-8a25-46e9188315a4",
+              "response_code": 403,
+              "response_code_details": "via_upstream",
+              "response_flags": "-",
+              "upstream_cluster": "outbound|8000||salary.zta-identity.svc.cluster.local;",
+              "upstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/salary",
+              "upstream_tls": "TLSv1.3"
+            },
+            {
+              "component": "frontend",
+              "attempt_id": "14612cd1-8af9-401e-a01a-87f1078a7f4a",
+              "downstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/device-gateway",
+              "downstream_tls": "TLSv1.3",
+              "method": "GET",
+              "path": "/api/salary/alice",
+              "request_id": "a31a413a-7917-4ea8-8a25-46e9188315a4",
+              "response_code": 403,
+              "response_code_details": "via_upstream",
+              "response_flags": "-",
+              "upstream_cluster": "inbound|8000||;",
+              "upstream_peer": null,
+              "upstream_tls": null
+            }
+          ]
+        },
+        {
+          "component": "salary",
+          "status": "VERIFIED_BLOCK",
+          "evidence": [
+            {
+              "component": "salary",
+              "attempt_id": "14612cd1-8af9-401e-a01a-87f1078a7f4a",
+              "downstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/frontend",
+              "downstream_tls": "TLSv1.3",
+              "method": "GET",
+              "path": "/api/salary/alice",
+              "request_id": "7d1ece9f-e527-484d-bc92-9efa3b446159",
+              "response_code": 200,
+              "response_code_details": "via_upstream",
+              "response_flags": "-",
+              "upstream_cluster": "inbound|8000||;",
+              "upstream_peer": null,
+              "upstream_tls": null
+            },
+            {
+              "component": "salary",
+              "attempt_id": "14612cd1-8af9-401e-a01a-87f1078a7f4a",
+              "downstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/frontend",
+              "downstream_tls": "TLSv1.3",
+              "method": "GET",
+              "path": "/api/salary/alice",
+              "request_id": "d15d5a13-5c35-453a-970f-043f7b9439d5",
+              "response_code": 200,
+              "response_code_details": "via_upstream",
+              "response_flags": "-",
+              "upstream_cluster": "inbound|8000||;",
+              "upstream_peer": null,
+              "upstream_tls": null
+            },
+            {
+              "component": "salary",
+              "attempt_id": "14612cd1-8af9-401e-a01a-87f1078a7f4a",
+              "downstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/frontend",
+              "downstream_tls": "TLSv1.3",
+              "method": "GET",
+              "path": "/api/salary/alice",
+              "request_id": "32b59e83-1d00-4565-8634-cdaba761ee63",
+              "response_code": 200,
+              "response_code_details": "via_upstream",
+              "response_flags": "-",
+              "upstream_cluster": "inbound|8000||;",
+              "upstream_peer": null,
+              "upstream_tls": null
+            },
+            {
+              "component": "salary",
+              "attempt_id": "14612cd1-8af9-401e-a01a-87f1078a7f4a",
+              "downstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/frontend",
+              "downstream_tls": "TLSv1.3",
+              "method": "GET",
+              "path": "/api/salary/alice",
+              "request_id": "6b3b4e30-572d-422d-b8ad-7b9c8a4b0799",
+              "response_code": 200,
+              "response_code_details": "via_upstream",
+              "response_flags": "-",
+              "upstream_cluster": "inbound|8000||;",
+              "upstream_peer": null,
+              "upstream_tls": null
+            },
+            {
+              "component": "salary",
+              "attempt_id": "14612cd1-8af9-401e-a01a-87f1078a7f4a",
+              "downstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/frontend",
+              "downstream_tls": "TLSv1.3",
+              "method": "GET",
+              "path": "/api/salary/alice",
+              "request_id": "e9dd3271-c990-4ecf-90b6-b221861b7204",
+              "response_code": 403,
+              "response_code_details": "ext_authz_denied",
+              "response_flags": "UAEX",
+              "upstream_cluster": "inbound|8000||;",
+              "upstream_peer": null,
+              "upstream_tls": null
+            },
+            {
+              "component": "salary",
+              "attempt_id": "14612cd1-8af9-401e-a01a-87f1078a7f4a",
+              "downstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/frontend",
+              "downstream_tls": "TLSv1.3",
+              "method": "GET",
+              "path": "/api/salary/alice",
+              "request_id": "0e12811e-86c9-4654-8203-d1b209da17cc",
+              "response_code": 200,
+              "response_code_details": "via_upstream",
+              "response_flags": "-",
+              "upstream_cluster": "inbound|8000||;",
+              "upstream_peer": null,
+              "upstream_tls": null
+            },
+            {
+              "component": "salary",
+              "attempt_id": "14612cd1-8af9-401e-a01a-87f1078a7f4a",
+              "downstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/frontend",
+              "downstream_tls": "TLSv1.3",
+              "method": "GET",
+              "path": "/api/salary/alice",
+              "request_id": "360c1a56-dbce-4334-81ec-fd2903cf5535",
+              "response_code": 403,
+              "response_code_details": "ext_authz_denied",
+              "response_flags": "UAEX",
+              "upstream_cluster": "inbound|8000||;",
+              "upstream_peer": null,
+              "upstream_tls": null
+            },
+            {
+              "component": "salary",
+              "attempt_id": "14612cd1-8af9-401e-a01a-87f1078a7f4a",
+              "downstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/frontend",
+              "downstream_tls": "TLSv1.3",
+              "method": "GET",
+              "path": "/api/salary/alice",
+              "request_id": "a31a413a-7917-4ea8-8a25-46e9188315a4",
+              "response_code": 403,
+              "response_code_details": "ext_authz_denied",
+              "response_flags": "UAEX",
+              "upstream_cluster": "inbound|8000||;",
+              "upstream_peer": null,
+              "upstream_tls": null
+            }
+          ]
+        },
+        {
+          "component": "profile",
+          "status": "NOT_OBSERVED",
+          "evidence": []
+        },
+        {
+          "component": "external_pe",
+          "status": "VERIFIED_BLOCK",
+          "evidence": [
+            {
+              "kind": "resource_pe_decision",
+              "source": "spiffe://cluster.local/ns/zta-identity/sa/frontend",
+              "destination": "spiffe://cluster.local/ns/zta-identity/sa/salary",
+              "method": "GET",
+              "path": "/api/salary/alice",
+              "attempt_id": "14612cd1-8af9-401e-a01a-87f1078a7f4a",
+              "request_id": "a31a413a-7917-4ea8-8a25-46e9188315a4",
+              "claims": {
+                "iss": "https://zta.example/identity",
+                "aud": "zta-hr",
+                "sub": "bob",
+                "role": "hr",
+                "device_id": "device-a",
+                "scope": "salary:read",
+                "iat": 1792669721,
+                "exp": 1792669841,
+                "auth_time": 1792669707,
+                "jti": "JufagUhnifXPkG1Bd-6gE9grnJ2ZlEj4",
+                "sid": "0c78db7caa8f107998dce7f58b08be642f55f3b0cc8c7557c9e74b260cc8ca45"
+              },
+              "decision": "DENY",
+              "reason": "behavioral_quarantine",
+              "policy_version": 1,
+              "recent_requests": 6,
+              "quarantined": true,
+              "event_id": 8029,
+              "timestamp": 1792669724.0888417
+            },
+            {
+              "kind": "resource_pe_decision",
+              "source": "spiffe://cluster.local/ns/zta-identity/sa/frontend",
+              "destination": "spiffe://cluster.local/ns/zta-identity/sa/salary",
+              "method": "GET",
+              "path": "/api/salary/alice",
+              "attempt_id": "14612cd1-8af9-401e-a01a-87f1078a7f4a",
+              "request_id": "360c1a56-dbce-4334-81ec-fd2903cf5535",
+              "claims": {
+                "iss": "https://zta.example/identity",
+                "aud": "zta-hr",
+                "sub": "bob",
+                "role": "hr",
+                "device_id": "device-a",
+                "scope": "salary:read",
+                "iat": 1792669721,
+                "exp": 1792669841,
+                "auth_time": 1792669707,
+                "jti": "JufagUhnifXPkG1Bd-6gE9grnJ2ZlEj4",
+                "sid": "0c78db7caa8f107998dce7f58b08be642f55f3b0cc8c7557c9e74b260cc8ca45"
+              },
+              "decision": "DENY",
+              "reason": "behavioral_quarantine",
+              "policy_version": 1,
+              "recent_requests": 6,
+              "quarantined": true,
+              "event_id": 8028,
+              "timestamp": 1792669724.0889084
+            },
+            {
+              "kind": "resource_pe_decision",
+              "source": "spiffe://cluster.local/ns/zta-identity/sa/frontend",
+              "destination": "spiffe://cluster.local/ns/zta-identity/sa/salary",
+              "method": "GET",
+              "path": "/api/salary/alice",
+              "attempt_id": "14612cd1-8af9-401e-a01a-87f1078a7f4a",
+              "request_id": "e9dd3271-c990-4ecf-90b6-b221861b7204",
+              "claims": {
+                "iss": "https://zta.example/identity",
+                "aud": "zta-hr",
+                "sub": "bob",
+                "role": "hr",
+                "device_id": "device-a",
+                "scope": "salary:read",
+                "iat": 1792669721,
+                "exp": 1792669841,
+                "auth_time": 1792669707,
+                "jti": "JufagUhnifXPkG1Bd-6gE9grnJ2ZlEj4",
+                "sid": "0c78db7caa8f107998dce7f58b08be642f55f3b0cc8c7557c9e74b260cc8ca45"
+              },
+              "decision": "DENY",
+              "reason": "behavioral_quarantine",
+              "policy_version": 1,
+              "recent_requests": 6,
+              "quarantined": true,
+              "event_id": 8027,
+              "timestamp": 1792669724.0887878
+            },
+            {
+              "kind": "resource_pe_decision",
+              "source": "spiffe://cluster.local/ns/zta-identity/sa/frontend",
+              "destination": "spiffe://cluster.local/ns/zta-identity/sa/salary",
+              "method": "GET",
+              "path": "/api/salary/alice",
+              "attempt_id": "14612cd1-8af9-401e-a01a-87f1078a7f4a",
+              "request_id": "0e12811e-86c9-4654-8203-d1b209da17cc",
+              "claims": {
+                "iss": "https://zta.example/identity",
+                "aud": "zta-hr",
+                "sub": "bob",
+                "role": "hr",
+                "device_id": "device-a",
+                "scope": "salary:read",
+                "iat": 1792669721,
+                "exp": 1792669841,
+                "auth_time": 1792669707,
+                "jti": "JufagUhnifXPkG1Bd-6gE9grnJ2ZlEj4",
+                "sid": "0c78db7caa8f107998dce7f58b08be642f55f3b0cc8c7557c9e74b260cc8ca45"
+              },
+              "decision": "ALLOW",
+              "reason": "resource_grant_matched",
+              "policy_version": 1,
+              "recent_requests": 5,
+              "quarantined": false,
+              "event_id": 8026,
+              "timestamp": 1792669724.0874028
+            },
+            {
+              "kind": "resource_pe_decision",
+              "source": "spiffe://cluster.local/ns/zta-identity/sa/frontend",
+              "destination": "spiffe://cluster.local/ns/zta-identity/sa/salary",
+              "method": "GET",
+              "path": "/api/salary/alice",
+              "attempt_id": "14612cd1-8af9-401e-a01a-87f1078a7f4a",
+              "request_id": "6b3b4e30-572d-422d-b8ad-7b9c8a4b0799",
+              "claims": {
+                "iss": "https://zta.example/identity",
+                "aud": "zta-hr",
+                "sub": "bob",
+                "role": "hr",
+                "device_id": "device-a",
+                "scope": "salary:read",
+                "iat": 1792669721,
+                "exp": 1792669841,
+                "auth_time": 1792669707,
+                "jti": "JufagUhnifXPkG1Bd-6gE9grnJ2ZlEj4",
+                "sid": "0c78db7caa8f107998dce7f58b08be642f55f3b0cc8c7557c9e74b260cc8ca45"
+              },
+              "decision": "ALLOW",
+              "reason": "resource_grant_matched",
+              "policy_version": 1,
+              "recent_requests": 1,
+              "quarantined": false,
+              "event_id": 8025,
+              "timestamp": 1792669724.011329
+            },
+            {
+              "kind": "resource_pe_decision",
+              "source": "spiffe://cluster.local/ns/zta-identity/sa/frontend",
+              "destination": "spiffe://cluster.local/ns/zta-identity/sa/salary",
+              "method": "GET",
+              "path": "/api/salary/alice",
+              "attempt_id": "14612cd1-8af9-401e-a01a-87f1078a7f4a",
+              "request_id": "32b59e83-1d00-4565-8634-cdaba761ee63",
+              "claims": {
+                "iss": "https://zta.example/identity",
+                "aud": "zta-hr",
+                "sub": "bob",
+                "role": "hr",
+                "device_id": "device-a",
+                "scope": "salary:read",
+                "iat": 1792669721,
+                "exp": 1792669841,
+                "auth_time": 1792669707,
+                "jti": "JufagUhnifXPkG1Bd-6gE9grnJ2ZlEj4",
+                "sid": "0c78db7caa8f107998dce7f58b08be642f55f3b0cc8c7557c9e74b260cc8ca45"
+              },
+              "decision": "ALLOW",
+              "reason": "resource_grant_matched",
+              "policy_version": 1,
+              "recent_requests": 3,
+              "quarantined": false,
+              "event_id": 8023,
+              "timestamp": 1792669724.0101228
+            },
+            {
+              "kind": "resource_pe_decision",
+              "source": "spiffe://cluster.local/ns/zta-identity/sa/frontend",
+              "destination": "spiffe://cluster.local/ns/zta-identity/sa/salary",
+              "method": "GET",
+              "path": "/api/salary/alice",
+              "attempt_id": "14612cd1-8af9-401e-a01a-87f1078a7f4a",
+              "request_id": "7d1ece9f-e527-484d-bc92-9efa3b446159",
+              "claims": {
+                "iss": "https://zta.example/identity",
+                "aud": "zta-hr",
+                "sub": "bob",
+                "role": "hr",
+                "device_id": "device-a",
+                "scope": "salary:read",
+                "iat": 1792669721,
+                "exp": 1792669841,
+                "auth_time": 1792669707,
+                "jti": "JufagUhnifXPkG1Bd-6gE9grnJ2ZlEj4",
+                "sid": "0c78db7caa8f107998dce7f58b08be642f55f3b0cc8c7557c9e74b260cc8ca45"
+              },
+              "decision": "ALLOW",
+              "reason": "resource_grant_matched",
+              "policy_version": 1,
+              "recent_requests": 4,
+              "quarantined": false,
+              "event_id": 8022,
+              "timestamp": 1792669724.0117092
+            },
+            {
+              "kind": "resource_pe_decision",
+              "source": "spiffe://cluster.local/ns/zta-identity/sa/frontend",
+              "destination": "spiffe://cluster.local/ns/zta-identity/sa/salary",
+              "method": "GET",
+              "path": "/api/salary/alice",
+              "attempt_id": "14612cd1-8af9-401e-a01a-87f1078a7f4a",
+              "request_id": "d15d5a13-5c35-453a-970f-043f7b9439d5",
+              "claims": {
+                "iss": "https://zta.example/identity",
+                "aud": "zta-hr",
+                "sub": "bob",
+                "role": "hr",
+                "device_id": "device-a",
+                "scope": "salary:read",
+                "iat": 1792669721,
+                "exp": 1792669841,
+                "auth_time": 1792669707,
+                "jti": "JufagUhnifXPkG1Bd-6gE9grnJ2ZlEj4",
+                "sid": "0c78db7caa8f107998dce7f58b08be642f55f3b0cc8c7557c9e74b260cc8ca45"
+              },
+              "decision": "ALLOW",
+              "reason": "resource_grant_matched",
+              "policy_version": 1,
+              "recent_requests": 2,
+              "quarantined": false,
+              "event_id": 8021,
+              "timestamp": 1792669724.0086114
+            }
+          ]
+        },
+        {
+          "component": "resource",
+          "status": "VERIFIED_PASS",
+          "evidence": [
+            {
+              "kind": "resource_execution",
+              "attempt_id": "14612cd1-8af9-401e-a01a-87f1078a7f4a",
+              "request_id": "7d1ece9f-e527-484d-bc92-9efa3b446159",
+              "subject": "bob",
+              "owner": "alice",
+              "resource": "salary",
+              "method": "GET",
+              "timestamp": 1792669724.0342479
+            },
+            {
+              "kind": "resource_execution",
+              "attempt_id": "14612cd1-8af9-401e-a01a-87f1078a7f4a",
+              "request_id": "d15d5a13-5c35-453a-970f-043f7b9439d5",
+              "subject": "bob",
+              "owner": "alice",
+              "resource": "salary",
+              "method": "GET",
+              "timestamp": 1792669724.0348685
+            },
+            {
+              "kind": "resource_execution",
+              "attempt_id": "14612cd1-8af9-401e-a01a-87f1078a7f4a",
+              "request_id": "32b59e83-1d00-4565-8634-cdaba761ee63",
+              "subject": "bob",
+              "owner": "alice",
+              "resource": "salary",
+              "method": "GET",
+              "timestamp": 1792669724.0834327
+            },
+            {
+              "kind": "resource_execution",
+              "attempt_id": "14612cd1-8af9-401e-a01a-87f1078a7f4a",
+              "request_id": "6b3b4e30-572d-422d-b8ad-7b9c8a4b0799",
+              "subject": "bob",
+              "owner": "alice",
+              "resource": "salary",
+              "method": "GET",
+              "timestamp": 1792669724.0864491
+            },
+            {
+              "kind": "resource_execution",
+              "attempt_id": "14612cd1-8af9-401e-a01a-87f1078a7f4a",
+              "request_id": "0e12811e-86c9-4654-8203-d1b209da17cc",
+              "subject": "bob",
+              "owner": "alice",
+              "resource": "salary",
+              "method": "GET",
+              "timestamp": 1792669724.1010032
+            }
+          ]
+        }
+      ],
+      "execution_query_observed": true,
+      "executions": [
+        {
+          "kind": "resource_execution",
+          "attempt_id": "14612cd1-8af9-401e-a01a-87f1078a7f4a",
+          "request_id": "7d1ece9f-e527-484d-bc92-9efa3b446159",
+          "subject": "bob",
+          "owner": "alice",
+          "resource": "salary",
+          "method": "GET",
+          "timestamp": 1792669724.0342479
+        },
+        {
+          "kind": "resource_execution",
+          "attempt_id": "14612cd1-8af9-401e-a01a-87f1078a7f4a",
+          "request_id": "d15d5a13-5c35-453a-970f-043f7b9439d5",
+          "subject": "bob",
+          "owner": "alice",
+          "resource": "salary",
+          "method": "GET",
+          "timestamp": 1792669724.0348685
+        },
+        {
+          "kind": "resource_execution",
+          "attempt_id": "14612cd1-8af9-401e-a01a-87f1078a7f4a",
+          "request_id": "32b59e83-1d00-4565-8634-cdaba761ee63",
+          "subject": "bob",
+          "owner": "alice",
+          "resource": "salary",
+          "method": "GET",
+          "timestamp": 1792669724.0834327
+        },
+        {
+          "kind": "resource_execution",
+          "attempt_id": "14612cd1-8af9-401e-a01a-87f1078a7f4a",
+          "request_id": "6b3b4e30-572d-422d-b8ad-7b9c8a4b0799",
+          "subject": "bob",
+          "owner": "alice",
+          "resource": "salary",
+          "method": "GET",
+          "timestamp": 1792669724.0864491
+        },
+        {
+          "kind": "resource_execution",
+          "attempt_id": "14612cd1-8af9-401e-a01a-87f1078a7f4a",
+          "request_id": "0e12811e-86c9-4654-8203-d1b209da17cc",
+          "subject": "bob",
+          "owner": "alice",
+          "resource": "salary",
+          "method": "GET",
+          "timestamp": 1792669724.1010032
+        }
+      ],
+      "note": "IDs correlate observations; they are not identity or authorization evidence.",
+      "responses": [
+        {
+          "status": 200,
+          "data": {
+            "resource": "salary",
+            "subject": "alice",
+            "currency": "TWD",
+            "amount": 60000,
+            "synthetic": true
+          },
+          "text": "{\"resource\":\"salary\",\"subject\":\"alice\",\"currency\":\"TWD\",\"amount\":60000,\"synthetic\":true}"
+        },
+        {
+          "status": 200,
+          "data": {
+            "resource": "salary",
+            "subject": "alice",
+            "currency": "TWD",
+            "amount": 60000,
+            "synthetic": true
+          },
+          "text": "{\"resource\":\"salary\",\"subject\":\"alice\",\"currency\":\"TWD\",\"amount\":60000,\"synthetic\":true}"
+        },
+        {
+          "status": 403,
+          "data": null,
+          "text": ""
+        },
+        {
+          "status": 200,
+          "data": {
+            "resource": "salary",
+            "subject": "alice",
+            "currency": "TWD",
+            "amount": 60000,
+            "synthetic": true
+          },
+          "text": "{\"resource\":\"salary\",\"subject\":\"alice\",\"currency\":\"TWD\",\"amount\":60000,\"synthetic\":true}"
+        },
+        {
+          "status": 403,
+          "data": null,
+          "text": ""
+        },
+        {
+          "status": 200,
+          "data": {
+            "resource": "salary",
+            "subject": "alice",
+            "currency": "TWD",
+            "amount": 60000,
+            "synthetic": true
+          },
+          "text": "{\"resource\":\"salary\",\"subject\":\"alice\",\"currency\":\"TWD\",\"amount\":60000,\"synthetic\":true}"
+        },
+        {
+          "status": 200,
+          "data": {
+            "resource": "salary",
+            "subject": "alice",
+            "currency": "TWD",
+            "amount": 60000,
+            "synthetic": true
+          },
+          "text": "{\"resource\":\"salary\",\"subject\":\"alice\",\"currency\":\"TWD\",\"amount\":60000,\"synthetic\":true}"
+        },
+        {
+          "status": 403,
+          "data": null,
+          "text": ""
+        }
+      ],
+      "request": {
+        "resource": "salary",
+        "owner": "alice",
+        "method": "GET",
+        "attack": "hr-burst"
+      },
+      "observed_at": "2026-10-22T11:48:49.007116+00:00"
+    },
+    {
+      "name": "New login/JWT cannot bypass quarantine",
+      "passed": true,
+      "attempt_id": "b147467f-7c52-4064-af57-1e1fff6f92d2",
+      "stages": [
+        {
+          "component": "device-gateway",
+          "status": "NOT_OBSERVED",
+          "evidence": []
+        },
+        {
+          "component": "frontend",
+          "status": "VERIFIED_PASS",
+          "evidence": [
+            {
+              "component": "frontend",
+              "attempt_id": "b147467f-7c52-4064-af57-1e1fff6f92d2",
+              "downstream_peer": null,
+              "downstream_tls": null,
+              "method": "GET",
+              "path": "/api/salary/alice",
+              "request_id": "c11cd06d-83ad-4595-bfdd-b649a169668d",
+              "response_code": 403,
+              "response_code_details": "via_upstream",
+              "response_flags": "-",
+              "upstream_cluster": "outbound|8000||salary.zta-identity.svc.cluster.local;",
+              "upstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/salary",
+              "upstream_tls": "TLSv1.3"
+            },
+            {
+              "component": "frontend",
+              "attempt_id": "b147467f-7c52-4064-af57-1e1fff6f92d2",
+              "downstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/device-gateway",
+              "downstream_tls": "TLSv1.3",
+              "method": "GET",
+              "path": "/api/salary/alice",
+              "request_id": "c11cd06d-83ad-4595-bfdd-b649a169668d",
+              "response_code": 403,
+              "response_code_details": "via_upstream",
+              "response_flags": "-",
+              "upstream_cluster": "inbound|8000||;",
+              "upstream_peer": null,
+              "upstream_tls": null
+            }
+          ]
+        },
+        {
+          "component": "salary",
+          "status": "VERIFIED_BLOCK",
+          "evidence": [
+            {
+              "component": "salary",
+              "attempt_id": "b147467f-7c52-4064-af57-1e1fff6f92d2",
+              "downstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/frontend",
+              "downstream_tls": "TLSv1.3",
+              "method": "GET",
+              "path": "/api/salary/alice",
+              "request_id": "c11cd06d-83ad-4595-bfdd-b649a169668d",
+              "response_code": 403,
+              "response_code_details": "ext_authz_denied",
+              "response_flags": "UAEX",
+              "upstream_cluster": "inbound|8000||;",
+              "upstream_peer": null,
+              "upstream_tls": null
+            }
+          ]
+        },
+        {
+          "component": "profile",
+          "status": "NOT_OBSERVED",
+          "evidence": []
+        },
+        {
+          "component": "external_pe",
+          "status": "VERIFIED_BLOCK",
+          "evidence": [
+            {
+              "kind": "resource_pe_decision",
+              "source": "spiffe://cluster.local/ns/zta-identity/sa/frontend",
+              "destination": "spiffe://cluster.local/ns/zta-identity/sa/salary",
+              "method": "GET",
+              "path": "/api/salary/alice",
+              "attempt_id": "b147467f-7c52-4064-af57-1e1fff6f92d2",
+              "request_id": "c11cd06d-83ad-4595-bfdd-b649a169668d",
+              "claims": {
+                "iss": "https://zta.example/identity",
+                "aud": "zta-hr",
+                "sub": "bob",
+                "role": "hr",
+                "device_id": "device-a",
+                "scope": "salary:read",
+                "iat": 1792669733,
+                "exp": 1792669853,
+                "auth_time": 1792669729,
+                "jti": "RR7WRbZiiKA7cItADi2tBv7q0gPYIWcG",
+                "sid": "d5cea305a1cce881dcc7ab651bcfb4d0959e77ee0ee6c29fcbd08706e1d0d3e8"
+              },
+              "decision": "DENY",
+              "reason": "behavioral_quarantine",
+              "policy_version": 1,
+              "recent_requests": 0,
+              "quarantined": true,
+              "event_id": 8066,
+              "timestamp": 1792669736.2016828
+            }
+          ]
+        },
+        {
+          "component": "resource",
+          "status": "NOT_REACHED",
+          "evidence": []
+        }
+      ],
+      "execution_query_observed": true,
+      "executions": [],
+      "note": "IDs correlate observations; they are not identity or authorization evidence.",
+      "responses": [
+        {
+          "status": 403,
+          "data": null,
+          "text": ""
+        }
+      ],
+      "request": {
+        "resource": "salary",
+        "owner": "alice",
+        "method": "GET",
+        "attack": "normal"
+      },
+      "observed_at": "2026-10-22T11:49:00.990056+00:00"
+    },
+    {
+      "name": "Fresh step-up cannot bypass quarantine",
+      "passed": true,
+      "attempt_id": "4e15ecff-e771-48b3-a989-abd02a5faffd",
+      "stages": [
+        {
+          "component": "device-gateway",
+          "status": "VERIFIED_PASS",
+          "evidence": [
+            {
+              "component": "device-gateway",
+              "attempt_id": "4e15ecff-e771-48b3-a989-abd02a5faffd",
+              "downstream_peer": "urn:zta:device:device-a",
+              "downstream_tls": "TLSv1.3",
+              "method": "POST",
+              "path": "/api/salary/alice/adjust",
+              "request_id": "c5429359-4719-4b2d-819f-e5c9d5a6938e",
+              "response_code": 403,
+              "response_code_details": "via_upstream",
+              "response_flags": "-",
+              "upstream_cluster": "frontend",
+              "upstream_peer": null,
+              "upstream_tls": null
+            }
+          ]
+        },
+        {
+          "component": "frontend",
+          "status": "VERIFIED_PASS",
+          "evidence": [
+            {
+              "component": "frontend",
+              "attempt_id": "4e15ecff-e771-48b3-a989-abd02a5faffd",
+              "downstream_peer": null,
+              "downstream_tls": null,
+              "method": "POST",
+              "path": "/api/salary/alice/adjust",
+              "request_id": "c5429359-4719-4b2d-819f-e5c9d5a6938e",
+              "response_code": 403,
+              "response_code_details": "via_upstream",
+              "response_flags": "-",
+              "upstream_cluster": "outbound|8000||salary.zta-identity.svc.cluster.local;",
+              "upstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/salary",
+              "upstream_tls": "TLSv1.3"
+            },
+            {
+              "component": "frontend",
+              "attempt_id": "4e15ecff-e771-48b3-a989-abd02a5faffd",
+              "downstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/device-gateway",
+              "downstream_tls": "TLSv1.3",
+              "method": "POST",
+              "path": "/api/salary/alice/adjust",
+              "request_id": "c5429359-4719-4b2d-819f-e5c9d5a6938e",
+              "response_code": 403,
+              "response_code_details": "via_upstream",
+              "response_flags": "-",
+              "upstream_cluster": "inbound|8000||;",
+              "upstream_peer": null,
+              "upstream_tls": null
+            }
+          ]
+        },
+        {
+          "component": "salary",
+          "status": "VERIFIED_BLOCK",
+          "evidence": [
+            {
+              "component": "salary",
+              "attempt_id": "4e15ecff-e771-48b3-a989-abd02a5faffd",
+              "downstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/frontend",
+              "downstream_tls": "TLSv1.3",
+              "method": "POST",
+              "path": "/api/salary/alice/adjust",
+              "request_id": "c5429359-4719-4b2d-819f-e5c9d5a6938e",
+              "response_code": 403,
+              "response_code_details": "ext_authz_denied",
+              "response_flags": "UAEX",
+              "upstream_cluster": "inbound|8000||;",
+              "upstream_peer": null,
+              "upstream_tls": null
+            }
+          ]
+        },
+        {
+          "component": "profile",
+          "status": "NOT_OBSERVED",
+          "evidence": []
+        },
+        {
+          "component": "external_pe",
+          "status": "VERIFIED_BLOCK",
+          "evidence": [
+            {
+              "kind": "resource_pe_decision",
+              "source": "spiffe://cluster.local/ns/zta-identity/sa/frontend",
+              "destination": "spiffe://cluster.local/ns/zta-identity/sa/salary",
+              "method": "POST",
+              "path": "/api/salary/alice/adjust",
+              "attempt_id": "4e15ecff-e771-48b3-a989-abd02a5faffd",
+              "request_id": "c5429359-4719-4b2d-819f-e5c9d5a6938e",
+              "claims": {
+                "iss": "https://zta.example/identity",
+                "aud": "zta-hr",
+                "sub": "bob",
+                "role": "hr",
+                "device_id": "device-a",
+                "scope": "salary:write",
+                "iat": 1792669745,
+                "exp": 1792669775,
+                "auth_time": 1792669741,
+                "jti": "LC4Ykswbv83o_-fn4dxSKJHXnpX4G1gE",
+                "sid": "c52d478c288c6a7ee9aa5d60d418ac76d7ae49e14b612dc79f24d9666fd55053"
+              },
+              "decision": "DENY",
+              "reason": "behavioral_quarantine",
+              "policy_version": 1,
+              "recent_requests": 0,
+              "quarantined": true,
+              "event_id": 8101,
+              "timestamp": 1792669747.8287885
+            }
+          ]
+        },
+        {
+          "component": "resource",
+          "status": "NOT_REACHED",
+          "evidence": []
+        }
+      ],
+      "execution_query_observed": true,
+      "executions": [],
+      "note": "IDs correlate observations; they are not identity or authorization evidence.",
+      "responses": [
+        {
+          "status": 403,
+          "data": null,
+          "text": ""
+        }
+      ],
+      "request": {
+        "resource": "salary",
+        "owner": "alice",
+        "method": "POST",
+        "attack": "normal"
+      },
+      "observed_at": "2026-10-22T11:49:12.494480+00:00"
+    },
+    {
+      "name": "PE unavailable fails closed without resource execution",
+      "passed": true,
+      "attempt_id": "ea4e0908-e906-4d0e-85e9-ee1db10ca9f6",
+      "stages": [
+        {
+          "component": "device-gateway",
+          "status": "VERIFIED_PASS",
+          "evidence": [
+            {
+              "component": "device-gateway",
+              "attempt_id": "ea4e0908-e906-4d0e-85e9-ee1db10ca9f6",
+              "downstream_peer": "urn:zta:device:device-a",
+              "downstream_tls": "TLSv1.3",
+              "method": "GET",
+              "path": "/api/salary/alice",
+              "request_id": "cd711b11-e1c3-4235-9606-28e89cb5bb3f",
+              "response_code": 503,
+              "response_code_details": "via_upstream",
+              "response_flags": "-",
+              "upstream_cluster": "frontend",
+              "upstream_peer": null,
+              "upstream_tls": null
+            }
+          ]
+        },
+        {
+          "component": "frontend",
+          "status": "VERIFIED_PASS",
+          "evidence": [
+            {
+              "component": "frontend",
+              "attempt_id": "ea4e0908-e906-4d0e-85e9-ee1db10ca9f6",
+              "downstream_peer": null,
+              "downstream_tls": null,
+              "method": "GET",
+              "path": "/api/salary/alice",
+              "request_id": "cd711b11-e1c3-4235-9606-28e89cb5bb3f",
+              "response_code": 503,
+              "response_code_details": "via_upstream",
+              "response_flags": "-",
+              "upstream_cluster": "outbound|8000||salary.zta-identity.svc.cluster.local;",
+              "upstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/salary",
+              "upstream_tls": "TLSv1.3"
+            },
+            {
+              "component": "frontend",
+              "attempt_id": "ea4e0908-e906-4d0e-85e9-ee1db10ca9f6",
+              "downstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/device-gateway",
+              "downstream_tls": "TLSv1.3",
+              "method": "GET",
+              "path": "/api/salary/alice",
+              "request_id": "cd711b11-e1c3-4235-9606-28e89cb5bb3f",
+              "response_code": 503,
+              "response_code_details": "via_upstream",
+              "response_flags": "-",
+              "upstream_cluster": "inbound|8000||;",
+              "upstream_peer": null,
+              "upstream_tls": null
+            }
+          ]
+        },
+        {
+          "component": "salary",
+          "status": "VERIFIED_BLOCK",
+          "evidence": [
+            {
+              "component": "salary",
+              "attempt_id": "ea4e0908-e906-4d0e-85e9-ee1db10ca9f6",
+              "downstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/frontend",
+              "downstream_tls": "TLSv1.3",
+              "method": "GET",
+              "path": "/api/salary/alice",
+              "request_id": "cd711b11-e1c3-4235-9606-28e89cb5bb3f",
+              "response_code": 503,
+              "response_code_details": "ext_authz_denied",
+              "response_flags": "UAEX",
+              "upstream_cluster": "inbound|8000||;",
+              "upstream_peer": null,
+              "upstream_tls": null
+            }
+          ]
+        },
+        {
+          "component": "profile",
+          "status": "NOT_OBSERVED",
+          "evidence": []
+        },
+        {
+          "component": "external_pe",
+          "status": "NOT_OBSERVED",
+          "evidence": []
+        },
+        {
+          "component": "resource",
+          "status": "NOT_REACHED",
+          "evidence": []
+        }
+      ],
+      "execution_query_observed": true,
+      "executions": [],
+      "note": "IDs correlate observations; they are not identity or authorization evidence.",
+      "responses": [
+        {
+          "status": 503,
+          "data": null,
+          "text": ""
+        }
+      ],
+      "request": {
+        "resource": "salary",
+        "owner": "alice",
+        "method": "GET",
+        "attack": "pe-outage"
+      },
+      "observed_at": "2026-10-22T11:49:24.202860+00:00"
+    },
+    {
+      "name": "PE recovery restores valid access",
+      "passed": true,
+      "attempt_id": "b38e9b1f-6549-4541-8bd6-a56a1dfbf6de",
+      "stages": [
+        {
+          "component": "device-gateway",
+          "status": "NOT_OBSERVED",
+          "evidence": []
+        },
+        {
+          "component": "frontend",
+          "status": "VERIFIED_PASS",
+          "evidence": [
+            {
+              "component": "frontend",
+              "attempt_id": "b38e9b1f-6549-4541-8bd6-a56a1dfbf6de",
+              "downstream_peer": null,
+              "downstream_tls": null,
+              "method": "GET",
+              "path": "/api/salary/alice",
+              "request_id": "62751336-f1b6-4ed8-bc4c-616d0408bb52",
+              "response_code": 200,
+              "response_code_details": "via_upstream",
+              "response_flags": "-",
+              "upstream_cluster": "outbound|8000||salary.zta-identity.svc.cluster.local;",
+              "upstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/salary",
+              "upstream_tls": "TLSv1.3"
+            },
+            {
+              "component": "frontend",
+              "attempt_id": "b38e9b1f-6549-4541-8bd6-a56a1dfbf6de",
+              "downstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/device-gateway",
+              "downstream_tls": "TLSv1.3",
+              "method": "GET",
+              "path": "/api/salary/alice",
+              "request_id": "62751336-f1b6-4ed8-bc4c-616d0408bb52",
+              "response_code": 200,
+              "response_code_details": "via_upstream",
+              "response_flags": "-",
+              "upstream_cluster": "inbound|8000||;",
+              "upstream_peer": null,
+              "upstream_tls": null
+            }
+          ]
+        },
+        {
+          "component": "salary",
+          "status": "VERIFIED_PASS",
+          "evidence": [
+            {
+              "component": "salary",
+              "attempt_id": "b38e9b1f-6549-4541-8bd6-a56a1dfbf6de",
+              "downstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/frontend",
+              "downstream_tls": "TLSv1.3",
+              "method": "GET",
+              "path": "/api/salary/alice",
+              "request_id": "62751336-f1b6-4ed8-bc4c-616d0408bb52",
+              "response_code": 200,
+              "response_code_details": "via_upstream",
+              "response_flags": "-",
+              "upstream_cluster": "inbound|8000||;",
+              "upstream_peer": null,
+              "upstream_tls": null
+            }
+          ]
+        },
+        {
+          "component": "profile",
+          "status": "NOT_OBSERVED",
+          "evidence": []
+        },
+        {
+          "component": "external_pe",
+          "status": "VERIFIED_PASS",
+          "evidence": [
+            {
+              "kind": "resource_pe_decision",
+              "source": "spiffe://cluster.local/ns/zta-identity/sa/frontend",
+              "destination": "spiffe://cluster.local/ns/zta-identity/sa/salary",
+              "method": "GET",
+              "path": "/api/salary/alice",
+              "attempt_id": "b38e9b1f-6549-4541-8bd6-a56a1dfbf6de",
+              "request_id": "62751336-f1b6-4ed8-bc4c-616d0408bb52",
+              "claims": {
+                "iss": "https://zta.example/identity",
+                "aud": "zta-hr",
+                "sub": "alice",
+                "role": "employee",
+                "device_id": "device-a",
+                "scope": "salary:read",
+                "iat": 1792669769,
+                "exp": 1792669889,
+                "auth_time": 1792669764,
+                "jti": "Oup8On4cbbSv6-spc-HbT8q28MesUMJN",
+                "sid": "187be7e637e8064ab1a270bd7576523999f31a026b0663d67089524fd08986cf"
+              },
+              "decision": "ALLOW",
+              "reason": "resource_grant_matched",
+              "policy_version": 1,
+              "recent_requests": 0,
+              "quarantined": false,
+              "event_id": 8137,
+              "timestamp": 1792669771.526593
+            }
+          ]
+        },
+        {
+          "component": "resource",
+          "status": "VERIFIED_PASS",
+          "evidence": [
+            {
+              "kind": "resource_execution",
+              "attempt_id": "b38e9b1f-6549-4541-8bd6-a56a1dfbf6de",
+              "request_id": "62751336-f1b6-4ed8-bc4c-616d0408bb52",
+              "subject": "alice",
+              "owner": "alice",
+              "resource": "salary",
+              "method": "GET",
+              "timestamp": 1792669771.5345697
+            }
+          ]
+        }
+      ],
+      "execution_query_observed": true,
+      "executions": [
+        {
+          "kind": "resource_execution",
+          "attempt_id": "b38e9b1f-6549-4541-8bd6-a56a1dfbf6de",
+          "request_id": "62751336-f1b6-4ed8-bc4c-616d0408bb52",
+          "subject": "alice",
+          "owner": "alice",
+          "resource": "salary",
+          "method": "GET",
+          "timestamp": 1792669771.5345697
+        }
+      ],
+      "note": "IDs correlate observations; they are not identity or authorization evidence.",
+      "responses": [
+        {
+          "status": 200,
+          "data": {
+            "resource": "salary",
+            "subject": "alice",
+            "currency": "TWD",
+            "amount": 60000,
+            "synthetic": true
+          },
+          "text": "{\"resource\":\"salary\",\"subject\":\"alice\",\"currency\":\"TWD\",\"amount\":60000,\"synthetic\":true}"
+        }
+      ],
+      "request": {
+        "resource": "salary",
+        "owner": "alice",
+        "method": "GET",
+        "attack": "normal"
+      },
+      "observed_at": "2026-10-22T11:49:36.720014+00:00"
+    },
+    {
+      "name": "authz-outage fails closed without execution",
+      "passed": true,
+      "attempt_id": "0cc89ddb-57e7-4ecd-8d29-0fde914c9e86",
+      "stages": [
+        {
+          "component": "device-gateway",
+          "status": "VERIFIED_PASS",
+          "evidence": [
+            {
+              "component": "device-gateway",
+              "attempt_id": "0cc89ddb-57e7-4ecd-8d29-0fde914c9e86",
+              "downstream_peer": "urn:zta:device:device-a",
+              "downstream_tls": "TLSv1.3",
+              "method": "GET",
+              "path": "/api/salary/alice",
+              "request_id": "b0e9de0d-4f24-4063-923c-d59c4e72d1fd",
+              "response_code": 403,
+              "response_code_details": "via_upstream",
+              "response_flags": "-",
+              "upstream_cluster": "frontend",
+              "upstream_peer": null,
+              "upstream_tls": null
+            }
+          ]
+        },
+        {
+          "component": "frontend",
+          "status": "VERIFIED_PASS",
+          "evidence": [
+            {
+              "component": "frontend",
+              "attempt_id": "0cc89ddb-57e7-4ecd-8d29-0fde914c9e86",
+              "downstream_peer": null,
+              "downstream_tls": null,
+              "method": "GET",
+              "path": "/api/salary/alice",
+              "request_id": "b0e9de0d-4f24-4063-923c-d59c4e72d1fd",
+              "response_code": 403,
+              "response_code_details": "via_upstream",
+              "response_flags": "-",
+              "upstream_cluster": "outbound|8000||salary.zta-identity.svc.cluster.local;",
+              "upstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/salary",
+              "upstream_tls": "TLSv1.3"
+            },
+            {
+              "component": "frontend",
+              "attempt_id": "0cc89ddb-57e7-4ecd-8d29-0fde914c9e86",
+              "downstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/device-gateway",
+              "downstream_tls": "TLSv1.3",
+              "method": "GET",
+              "path": "/api/salary/alice",
+              "request_id": "b0e9de0d-4f24-4063-923c-d59c4e72d1fd",
+              "response_code": 403,
+              "response_code_details": "via_upstream",
+              "response_flags": "-",
+              "upstream_cluster": "inbound|8000||;",
+              "upstream_peer": null,
+              "upstream_tls": null
+            }
+          ]
+        },
+        {
+          "component": "salary",
+          "status": "VERIFIED_BLOCK",
+          "evidence": [
+            {
+              "component": "salary",
+              "attempt_id": "0cc89ddb-57e7-4ecd-8d29-0fde914c9e86",
+              "downstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/frontend",
+              "downstream_tls": "TLSv1.3",
+              "method": "GET",
+              "path": "/api/salary/alice",
+              "request_id": "b0e9de0d-4f24-4063-923c-d59c4e72d1fd",
+              "response_code": 403,
+              "response_code_details": "ext_authz_error",
+              "response_flags": "UAEX",
+              "upstream_cluster": "inbound|8000||;",
+              "upstream_peer": null,
+              "upstream_tls": null
+            }
+          ]
+        },
+        {
+          "component": "profile",
+          "status": "NOT_OBSERVED",
+          "evidence": []
+        },
+        {
+          "component": "external_pe",
+          "status": "NOT_OBSERVED",
+          "evidence": []
+        },
+        {
+          "component": "resource",
+          "status": "NOT_REACHED",
+          "evidence": []
+        }
+      ],
+      "execution_query_observed": true,
+      "executions": [],
+      "note": "IDs correlate observations; they are not identity or authorization evidence.",
+      "responses": [
+        {
+          "status": 403,
+          "data": null,
+          "text": ""
+        }
+      ],
+      "request": {
+        "resource": "salary",
+        "owner": "alice",
+        "method": "GET",
+        "attack": "authz-outage"
+      },
+      "observed_at": "2026-10-22T11:50:22.314076+00:00"
+    },
+    {
+      "name": "audit-outage fails closed without execution",
+      "passed": true,
+      "attempt_id": "0563209b-ea52-4682-945f-05fdfa74b246",
+      "stages": [
+        {
+          "component": "device-gateway",
+          "status": "VERIFIED_PASS",
+          "evidence": [
+            {
+              "component": "device-gateway",
+              "attempt_id": "0563209b-ea52-4682-945f-05fdfa74b246",
+              "downstream_peer": "urn:zta:device:device-a",
+              "downstream_tls": "TLSv1.3",
+              "method": "GET",
+              "path": "/api/salary/alice",
+              "request_id": "dcbcfe99-7585-4be3-be9a-f3340899fa00",
+              "response_code": 503,
+              "response_code_details": "via_upstream",
+              "response_flags": "-",
+              "upstream_cluster": "frontend",
+              "upstream_peer": null,
+              "upstream_tls": null
+            }
+          ]
+        },
+        {
+          "component": "frontend",
+          "status": "VERIFIED_PASS",
+          "evidence": [
+            {
+              "component": "frontend",
+              "attempt_id": "0563209b-ea52-4682-945f-05fdfa74b246",
+              "downstream_peer": null,
+              "downstream_tls": null,
+              "method": "GET",
+              "path": "/api/salary/alice",
+              "request_id": "dcbcfe99-7585-4be3-be9a-f3340899fa00",
+              "response_code": 503,
+              "response_code_details": "via_upstream",
+              "response_flags": "-",
+              "upstream_cluster": "outbound|8000||salary.zta-identity.svc.cluster.local;",
+              "upstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/salary",
+              "upstream_tls": "TLSv1.3"
+            },
+            {
+              "component": "frontend",
+              "attempt_id": "0563209b-ea52-4682-945f-05fdfa74b246",
+              "downstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/device-gateway",
+              "downstream_tls": "TLSv1.3",
+              "method": "GET",
+              "path": "/api/salary/alice",
+              "request_id": "dcbcfe99-7585-4be3-be9a-f3340899fa00",
+              "response_code": 503,
+              "response_code_details": "via_upstream",
+              "response_flags": "-",
+              "upstream_cluster": "inbound|8000||;",
+              "upstream_peer": null,
+              "upstream_tls": null
+            }
+          ]
+        },
+        {
+          "component": "salary",
+          "status": "VERIFIED_BLOCK",
+          "evidence": [
+            {
+              "component": "salary",
+              "attempt_id": "0563209b-ea52-4682-945f-05fdfa74b246",
+              "downstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/frontend",
+              "downstream_tls": "TLSv1.3",
+              "method": "GET",
+              "path": "/api/salary/alice",
+              "request_id": "dcbcfe99-7585-4be3-be9a-f3340899fa00",
+              "response_code": 503,
+              "response_code_details": "ext_authz_denied",
+              "response_flags": "UAEX",
+              "upstream_cluster": "inbound|8000||;",
+              "upstream_peer": null,
+              "upstream_tls": null
+            }
+          ]
+        },
+        {
+          "component": "profile",
+          "status": "NOT_OBSERVED",
+          "evidence": []
+        },
+        {
+          "component": "external_pe",
+          "status": "NOT_OBSERVED",
+          "evidence": []
+        },
+        {
+          "component": "resource",
+          "status": "NOT_REACHED",
+          "evidence": []
+        }
+      ],
+      "execution_query_observed": true,
+      "executions": [],
+      "note": "IDs correlate observations; they are not identity or authorization evidence.",
+      "responses": [
+        {
+          "status": 503,
+          "data": null,
+          "text": ""
+        }
+      ],
+      "request": {
+        "resource": "salary",
+        "owner": "alice",
+        "method": "GET",
+        "attack": "audit-outage"
+      },
+      "observed_at": "2026-10-22T11:50:36.406715+00:00"
+    },
+    {
+      "name": "Live device risk blocks existing JWT",
+      "passed": true,
+      "attempt_id": "74cf3609-3daf-4577-b47f-e3f2ec5be07b",
+      "stages": [
+        {
+          "component": "device-gateway",
+          "status": "NOT_OBSERVED",
+          "evidence": []
+        },
+        {
+          "component": "frontend",
+          "status": "VERIFIED_PASS",
+          "evidence": [
+            {
+              "component": "frontend",
+              "attempt_id": "74cf3609-3daf-4577-b47f-e3f2ec5be07b",
+              "downstream_peer": null,
+              "downstream_tls": null,
+              "method": "GET",
+              "path": "/api/salary/alice",
+              "request_id": "f6b6012f-1e2a-4f1f-80bd-b4bd9a93e94c",
+              "response_code": 403,
+              "response_code_details": "via_upstream",
+              "response_flags": "-",
+              "upstream_cluster": "outbound|8000||salary.zta-identity.svc.cluster.local;",
+              "upstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/salary",
+              "upstream_tls": "TLSv1.3"
+            },
+            {
+              "component": "frontend",
+              "attempt_id": "74cf3609-3daf-4577-b47f-e3f2ec5be07b",
+              "downstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/device-gateway",
+              "downstream_tls": "TLSv1.3",
+              "method": "GET",
+              "path": "/api/salary/alice",
+              "request_id": "f6b6012f-1e2a-4f1f-80bd-b4bd9a93e94c",
+              "response_code": 403,
+              "response_code_details": "via_upstream",
+              "response_flags": "-",
+              "upstream_cluster": "inbound|8000||;",
+              "upstream_peer": null,
+              "upstream_tls": null
+            }
+          ]
+        },
+        {
+          "component": "salary",
+          "status": "VERIFIED_BLOCK",
+          "evidence": [
+            {
+              "component": "salary",
+              "attempt_id": "74cf3609-3daf-4577-b47f-e3f2ec5be07b",
+              "downstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/frontend",
+              "downstream_tls": "TLSv1.3",
+              "method": "GET",
+              "path": "/api/salary/alice",
+              "request_id": "f6b6012f-1e2a-4f1f-80bd-b4bd9a93e94c",
+              "response_code": 403,
+              "response_code_details": "ext_authz_denied",
+              "response_flags": "UAEX",
+              "upstream_cluster": "inbound|8000||;",
+              "upstream_peer": null,
+              "upstream_tls": null
+            }
+          ]
+        },
+        {
+          "component": "profile",
+          "status": "NOT_OBSERVED",
+          "evidence": []
+        },
+        {
+          "component": "external_pe",
+          "status": "VERIFIED_BLOCK",
+          "evidence": [
+            {
+              "kind": "resource_pe_decision",
+              "source": "spiffe://cluster.local/ns/zta-identity/sa/frontend",
+              "destination": "spiffe://cluster.local/ns/zta-identity/sa/salary",
+              "method": "GET",
+              "path": "/api/salary/alice",
+              "attempt_id": "74cf3609-3daf-4577-b47f-e3f2ec5be07b",
+              "request_id": "f6b6012f-1e2a-4f1f-80bd-b4bd9a93e94c",
+              "claims": {
+                "iss": "https://zta.example/identity",
+                "aud": "zta-hr",
+                "sub": "alice",
+                "role": "employee",
+                "device_id": "device-a",
+                "scope": "salary:read",
+                "iat": 1792669841,
+                "exp": 1792669961,
+                "auth_time": 1792669836,
+                "jti": "f91xZe-eVY7kkvIWlR9xf26VMrAZ6NKk",
+                "sid": "59f74ff97ac1c744dc01859b76c883de04a037a40dcda3ff576e6082c218c8d3"
+              },
+              "decision": "DENY",
+              "reason": "session_revoked_or_expired",
+              "event_id": 8207,
+              "timestamp": 1792669843.570427
+            }
+          ]
+        },
+        {
+          "component": "resource",
+          "status": "NOT_REACHED",
+          "evidence": []
+        }
+      ],
+      "execution_query_observed": true,
+      "executions": [],
+      "note": "IDs correlate observations; they are not identity or authorization evidence.",
+      "responses": [
+        {
+          "status": 403,
+          "data": null,
+          "text": ""
+        }
+      ],
+      "request": {
+        "resource": "salary",
+        "owner": "alice",
+        "method": "GET",
+        "attack": "normal"
+      },
+      "observed_at": "2026-10-22T11:50:48.195931+00:00"
+    }
+  ],
+  "environment": "kind-zta-identity / zta-identity",
+  "passed": true,
+  "authenticator": "test-only software authenticator; real server verification",
+  "revision": "f68ddb4f63ff6656ca6feea50607abfeda479c45",
+  "source_digest_sha256": "e7203dbe3264799b372de63ee8a70796ced2b22a5840370a34646821844a630d",
+  "image_id": "sha256:a7e7e8108c87b7cdef42303dd16434de62ad57604586f318b0506d737fa4b054",
+  "certificates": [
+    {
+      "workload": "context",
+      "uri": "spiffe://cluster.local/ns/zta-identity/sa/context",
+      "not_before": "2026-10-22T11:48:31+00:00",
+      "not_after": "2026-10-22T12:50:31+00:00",
+      "lifetime_seconds": 3720.0
+    },
+    {
+      "workload": "device-gateway",
+      "uri": "spiffe://cluster.local/ns/zta-identity/sa/device-gateway",
+      "not_before": "2026-10-22T11:46:19+00:00",
+      "not_after": "2026-10-22T12:48:19+00:00",
+      "lifetime_seconds": 3720.0
+    },
+    {
+      "workload": "frontend",
+      "uri": "spiffe://cluster.local/ns/zta-identity/sa/frontend",
+      "not_before": "2026-10-22T11:46:17+00:00",
+      "not_after": "2026-10-22T12:48:17+00:00",
+      "lifetime_seconds": 3720.0
+    },
+    {
+      "workload": "identity",
+      "uri": "spiffe://cluster.local/ns/zta-identity/sa/identity",
+      "not_before": "2026-10-22T11:45:56+00:00",
+      "not_after": "2026-10-22T12:47:56+00:00",
+      "lifetime_seconds": 3720.0
+    },
+    {
+      "workload": "intruder",
+      "uri": "spiffe://cluster.local/ns/zta-identity/sa/intruder",
+      "not_before": "2026-10-22T11:46:21+00:00",
+      "not_after": "2026-10-22T12:48:21+00:00",
+      "lifetime_seconds": 3720.0
+    },
+    {
+      "workload": "mesh-authz",
+      "uri": "spiffe://cluster.local/ns/zta-identity/sa/mesh-authz",
+      "not_before": "2026-10-22T11:48:15+00:00",
+      "not_after": "2026-10-22T12:50:15+00:00",
+      "lifetime_seconds": 3720.0
+    },
+    {
+      "workload": "pa",
+      "uri": "spiffe://cluster.local/ns/zta-identity/sa/pa",
+      "not_before": "2026-10-22T11:45:50+00:00",
+      "not_after": "2026-10-22T12:47:50+00:00",
+      "lifetime_seconds": 3720.0
+    },
+    {
+      "workload": "pe",
+      "uri": "spiffe://cluster.local/ns/zta-identity/sa/pe",
+      "not_before": "2026-10-22T11:47:19+00:00",
+      "not_after": "2026-10-22T12:49:19+00:00",
+      "lifetime_seconds": 3720.0
+    },
+    {
+      "workload": "probe",
+      "uri": "spiffe://cluster.local/ns/zta-identity/sa/probe",
+      "not_before": "2026-10-22T11:45:56+00:00",
+      "not_after": "2026-10-22T12:47:56+00:00",
+      "lifetime_seconds": 3720.0
+    },
+    {
+      "workload": "profile",
+      "uri": "spiffe://cluster.local/ns/zta-identity/sa/profile",
+      "not_before": "2026-10-22T11:46:12+00:00",
+      "not_after": "2026-10-22T12:48:12+00:00",
+      "lifetime_seconds": 3720.0
+    },
+    {
+      "workload": "salary",
+      "uri": "spiffe://cluster.local/ns/zta-identity/sa/salary",
+      "not_before": "2026-10-22T11:46:04+00:00",
+      "not_after": "2026-10-22T12:48:04+00:00",
+      "lifetime_seconds": 3720.0
+    }
+  ],
+  "custom_coverage": {
+    "action": "CUSTOM",
+    "provider": {
+      "name": "identity-pe"
+    },
+    "rules": [
+      {
+        "to": [
+          {
+            "operation": {
+              "ports": [
+                "8000"
+              ]
+            }
+          }
+        ]
+      }
+    ],
+    "selector": {
+      "matchLabels": {
+        "role": "backend"
+      }
+    }
+  },
+  "finished_at": "2026-10-22T11:50:51.290932+00:00"
+}

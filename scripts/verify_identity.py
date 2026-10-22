@@ -12,6 +12,7 @@ import sys
 import time
 import hashlib
 import ssl
+import socket
 
 import httpx
 import jwt
@@ -24,9 +25,27 @@ from scripts.security_inspector import SecurityOperator, Experiment, forwards
 from scripts.identity_deploy import STATE, k
 
 
+def certificate_required(error):
+    return isinstance(error, ssl.SSLError) and getattr(error, 'reason', '') == 'TLSV13_ALERT_CERTIFICATE_REQUIRED'
+
+
+def missing_certificate_observation(tls):
+    try:
+        with socket.create_connection(('127.0.0.1', 18443), timeout=5) as tcp:
+            with tls.wrap_socket(tcp, server_hostname='localhost') as connection:
+                connection.sendall(b'GET /health HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n')
+                connection.recv(1024)
+    except ssl.SSLError as error:
+        if not certificate_required(error):
+            raise
+        return {'tls_alert': error.reason, 'backend_trace': 'NOT_OBSERVED'}
+    raise AssertionError('No specific TLS certificate-required alert was observed')
+
+
 class User:
     def __init__(self, subject, operator):
         self.subject, self.operator = subject, operator
+        self.sessions = {}
         self.path = STATE / ('test-authenticator-'+subject+'.json')
         self.auth = Authenticator()
         if self.path.exists():
@@ -58,19 +77,51 @@ class User:
             r.raise_for_status()
             return r.json()
 
+    def close(self):
+        # Revoke only Sessions created by this test user, never reset identity or risk.
+        errors = []
+        for resource, sid in list(self.sessions.items()):
+            try:
+                self.operator.control('pa', '/revoke', 'POST', {'session_id': sid})
+                del self.sessions[resource]
+            except Exception as error:
+                errors.append(type(error).__name__)
+        if errors:
+            raise RuntimeError('Test Session cleanup failed: '+', '.join(errors))
+
     def login(self):
+        self.close()
         o = self.post('/login/options', {'subject': self.subject})
         response = self.auth.login(o['publicKey'], origin='http://localhost:18081')
         self.save()
         return self.post('/login/verify', {'ceremony': o['ceremony'], 'credential': response})['token']
 
     def token(self, resource='salary', write=False):
-        session = self.operator.agent('/session', {'path': '/api/'+resource, 'method': 'GET'}, self.human)
-        session.raise_for_status()
-        self.sid = session.json()['session_id']
+        if resource not in self.sessions:
+            session = self.operator.agent('/session', {'path': '/api/'+resource, 'method': 'GET'}, self.human)
+            session.raise_for_status()
+            self.sessions[resource] = session.json()['session_id']
+        self.sid = self.sessions[resource]
         response = self.operator.agent('/token/exchange', {'scope': 'salary:write' if write else None}, self.sid)
-        response.raise_for_status()
+        if response.is_error:
+            raise RuntimeError(f'JWT exchange rejected ({response.status_code}): {response.text[:500]}')
         return response.json()['access_token']
+
+
+def save_evidence(result, users, destination, *, primary_error=False):
+    errors = []
+    for user in users:
+        try:
+            user.close()
+        except Exception as error:
+            errors.append({'subject': user.subject, 'error': type(error).__name__})
+    if errors:
+        result['passed'] = False
+        result['cleanup_errors'] = errors
+    result['finished_at'] = datetime.now(timezone.utc).isoformat()
+    destination.write_text(json.dumps(result, indent=2), encoding='utf-8')
+    if errors and not primary_error:
+        raise RuntimeError('Acceptance cleanup failed; see current evidence report')
 
 
 def run():
@@ -103,23 +154,36 @@ def run():
         result['checks'].append({'name': name, 'passed': True, **evidence})
         print('PASS '+name+' '+str(codes), flush=True)
         return evidence
+    users = []
     try:
         with forwards():
+            # Explicit operator test setup, separately audited; login never clears risk.
+            operator.control('pe', '/resource-state/bob', 'PUT', {})
             alice, bob = User('alice', operator), User('bob', operator)
+            users = [alice, bob]
             for with_cert in (False, True):
+                deadline = time.monotonic()+10
+                while True:
+                    try:
+                        if operator.agent('/health', None, '', method='GET').status_code == 404:
+                            break
+                    except httpx.HTTPError:
+                        pass
+                    if time.monotonic() >= deadline:
+                        raise RuntimeError('Device TLS forward did not recover')
+                    time.sleep(.25)
                 tls = ssl.create_default_context(cafile=str(STATE/'certs/service-ca.crt'))
                 if with_cert:
                     tls.load_cert_chain(STATE/'certs/device-b.crt', STATE/'certs/device-b.key')
                 name = 'Different device plus forged XFCC cannot create Session' if with_cert else 'Device gateway rejects absent client certificate'
-                try:
+                if not with_cert:
+                    observed = missing_certificate_observation(tls)
+                else:
                     with httpx.Client(verify=tls, timeout=5, trust_env=False) as c:
                         r = c.post('https://localhost:18443/session', json={'path': '/api/salary', 'method': 'GET'},
                             headers={'authorization': 'Bearer '+alice.human, 'x-forwarded-client-cert': 'URI=urn:zta:device:device-a'})
-                    assert with_cert and r.status_code == 403
+                    assert r.status_code == 403
                     observed = {'status': r.status_code}
-                except httpx.HTTPError as exc:
-                    assert not with_cert
-                    observed = {'transport_error': type(exc).__name__, 'backend_trace': 'NOT_OBSERVED'}
                 result['checks'].append({'name': name, 'passed': True, 'client_observation': observed})
                 print('PASS '+name, flush=True)
             check('Alice reads own salary', alice.token(), [200])
@@ -131,7 +195,12 @@ def run():
             check('Forged identity headers do not replace mTLS identity', alice.token(), [403], attack='forged-headers', no_execution=True)
             check('Missing user JWT', '', [403, 401], attack='missing-jwt', no_execution=True)
             check('Invalid JWT signature', '', [401], attack='invalid-jwt', no_execution=True)
-            check('Receiving sidecar independently rejects invalid JWT', 'invalid-signature', [401], attack='direct-frontend', no_execution=True)
+            invalid_receiver = check('Receiving enforcement independently verifies invalid JWT', 'invalid-signature', [401, 403], attack='direct-frontend', no_execution=True)
+            jwt_denied = any(e.get('reason') == 'invalid_user_token' for s in invalid_receiver['stages']
+                if s['component'] == 'external_pe' for e in s['evidence'])
+            native_jwt_denied = any('jwt' in e.get('response_code_details', '') for s in invalid_receiver['stages']
+                if s['component'] == 'salary' for e in s['evidence'])
+            assert jwt_denied or native_jwt_denied, 'HTTP rejection alone is not JWT-verification evidence'
             good = alice.token()
             payload = jwt.decode(good, options={'verify_signature': False})
             private = serialization.load_pem_private_key((STATE/'signing.pem').read_bytes(), password=None)
@@ -152,6 +221,7 @@ def run():
             print('PASS HR rate feedback '+str(codes), flush=True)
             bob.human = bob.login()
             check('New login/JWT cannot bypass quarantine', bob.token(), [403], no_execution=True, reason='behavioral_quarantine')
+            bob.human = bob.login()
             check('Fresh step-up cannot bypass quarantine', bob.token(write=True), [403], operation='adjust', no_execution=True, reason='behavioral_quarantine')
             # Restore only the explicit subject risk injected by this test.
             operator.control('pe', '/resource-state/bob', 'PUT', {})
@@ -175,8 +245,7 @@ def run():
             result['custom_coverage'] = policies['spec']
             result['passed'] = True
     finally:
-        result['finished_at'] = datetime.now(timezone.utc).isoformat()
-        (artifacts/'identity-e2e.json').write_text(json.dumps(result, indent=2), encoding='utf-8')
+        save_evidence(result, users, artifacts/'identity-e2e.json', primary_error=sys.exc_info()[0] is not None)
     print(f"Verified {len(result['checks'])} real integration checks", flush=True)
 
 

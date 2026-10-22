@@ -101,14 +101,14 @@ docker compose -p zta-verification down -v
 
 ## 停止、重新開始與排錯
 
-`docker compose down` 停止但保留 DB；重啟後 PA 重評估原 session。要**明確清除全部 demo identity/policy/session/log DB**再註冊新Passkey，用 `docker compose down -v`。憑證與`.env`仍保留；換CA需先停止、明確移除certs再初始化，舊裝置憑證將失效。不要提交私鑰/DB。
+`docker compose stop` 停止服務並保留 DB、Passkey 與 Session；重啟後 PA 重新評估既有 Session。遺失 Passkey 可由受保護管理端建立額外 enrollment invitation；不需清除資料。憑證輪替應另外規劃與核准，避免既有裝置失效。不要提交私鑰或 DB。
 
 - 找不到docker：安裝/啟動Docker Desktop，確認Linux containers與Compose v2；本專案不自動安裝系統服務。
 - Envoy錯誤：先執行上述`--mode validate`，再查看`docker compose logs pep`。
 - Certificate permission denied（Linux）：確認`.env` ENVOY_UID等於私鑰檔案擁有者uid，且不是0；不要放寬私鑰成world-readable。
 - 503/403：查看`docker compose logs pa pe context identity`及Dashboard事件；服務不可用時本設計fail closed。
 - browser WebAuthn NotAllowedError：確認localhost、支援的authenticator、已設定Windows Hello，並允許在使用者點擊後操作。不要用`127.0.0.1`替代localhost登入。
-- 已註冊但無可用Passkey：這個精簡demo沒有credential recovery；明確清除demo volumes再enroll。
+- 已註冊但無可用 Passkey：保留既有資料。在新 Inspector 的受保護管理流程建立同一 subject 的額外 enrollment invitation，再註冊新金鑰；參閱 [身分與操作指南](docs/identity-inspector.md)。原 207 的管理端也可呼叫受 service key 保護的 `/enrollment/invite`，不需清除 Volumes。
 
 ## 展示與 production 差異
 

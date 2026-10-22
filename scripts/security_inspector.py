@@ -60,13 +60,23 @@ def forwards():
         yield
         return
     processes = []
+    stop = threading.Event()
+    watcher = None
     options = {'creationflags': subprocess.CREATE_NO_WINDOW} if os.name == 'nt' else {}
+    specifications = [('identity', 18082, 8000), ('device-gateway', 18443, 8443)]
+    def start_forward(specification):
+        service, local, remote = specification
+        return subprocess.Popen([tool('kubectl'), '--kubeconfig', str(KUBECONFIG), '--context', CONTEXT,
+            '-n', NS, 'port-forward', '--address=127.0.0.1', 'service/'+service, f'{local}:{remote}'],
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, **options)
+    def supervise():
+        while not stop.wait(.25):
+            for index, process in enumerate(processes):
+                if process.poll() is not None:
+                    processes[index] = start_forward(specifications[index])
     try:
-        for service, local, remote in [('identity', 18082, 8000), ('device-gateway', 18443, 8443)]:
-            p = subprocess.Popen([tool('kubectl'), '--kubeconfig', str(KUBECONFIG), '--context', CONTEXT,
-                '-n', NS, 'port-forward', '--address=127.0.0.1', 'service/'+service, f'{local}:{remote}'],
-                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, **options)
-            processes.append(p)
+        for specification in specifications:
+            processes.append(start_forward(specification))
         deadline = time.monotonic()+20
         while time.monotonic() < deadline:
             if any(p.poll() is not None for p in processes):
@@ -79,8 +89,15 @@ def forwards():
             time.sleep(.25)
         else:
             raise RuntimeError('Identity port forward did not become ready')
+        # Windows kubectl can terminate its entire TLS forward after a rejected
+        # handshake or Pod replacement. Restore the tunnel; never restart Pods.
+        watcher = threading.Thread(target=supervise, daemon=True)
+        watcher.start()
         yield
     finally:
+        stop.set()
+        if watcher:
+            watcher.join(timeout=2)
         for p in processes:
             p.terminate()
         for p in processes:
@@ -101,7 +118,7 @@ class SecurityOperator:
         tls.load_cert_chain(STATE/'certs/device-a.crt', STATE/'certs/device-a.key')
         with httpx.Client(verify=tls, trust_env=False, timeout=15) as client:
             r = client.request(method, 'https://localhost:18443'+path, json=body,
-                               headers=headers if headers is not None else {'authorization': 'Bearer '+token})
+                               headers=headers if headers is not None else ({'authorization': 'Bearer '+token} if token else {}))
         return r
 
     def status(self):
@@ -179,11 +196,13 @@ class SecurityOperator:
             raise RuntimeError('Recovery required before further experiments')
         attempt, request_id = str(uuid4()), str(uuid4())
         path = '/api/'+spec.resource+'/'+spec.owner+('/adjust' if spec.operation == 'adjust' else '')
-        headers = {'authorization': 'Bearer '+spec.token, 'x-attempt-id': attempt, 'x-request-id': request_id}
+        headers = {'x-attempt-id': attempt, 'x-request-id': request_id}
+        if spec.token:
+            headers['authorization'] = 'Bearer '+spec.token
         if spec.attack == 'invalid-jwt':
             headers['authorization'] = 'Bearer invalid-signature'
         elif spec.attack == 'missing-jwt':
-            headers.pop('authorization')
+            headers.pop('authorization', None)
         elif spec.attack == 'forged-headers':
             headers.update({'x-user-id': 'bob', 'x-role': 'hr', 'x-forwarded-client-cert': 'URI=spiffe://cluster.local/ns/'+NS+'/sa/frontend'})
         method = 'POST' if spec.operation == 'adjust' else 'GET'
@@ -297,6 +316,15 @@ def create_app(operator):
             return operator.certificates()
         except Exception:
             raise HTTPException(503, 'public_certificates_not_observed')
+
+    @app.get('/api/inspector/evidence/{attempt_id}')
+    def reread_evidence(attempt_id: str):
+        from uuid import UUID
+        try:
+            UUID(attempt_id)
+        except ValueError:
+            raise HTTPException(400, 'valid_attempt_id_required')
+        return operator.evidence(attempt_id)
 
     @app.post('/api/identity/{operation:path}')
     def identity(operation: str, body: dict):

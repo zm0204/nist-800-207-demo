@@ -1,0 +1,40 @@
+name: Verify Identity-Aware ZTA
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  identity-mesh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install test and mesh dependencies
+        run: python -m pip install -r requirements-dev.txt -r requirements-mesh.txt
+      - name: Verify original regressions and identity policy units
+        run: python -m pytest -q
+      - name: Install pinned cluster tools
+        run: |
+          mkdir -p .tmp/bin
+          curl -fL --retry 3 https://kind.sigs.k8s.io/dl/v0.33.0/kind-linux-amd64 -o .tmp/bin/kind
+          curl -fL --retry 3 https://github.com/istio/istio/releases/download/1.31.1/istioctl-1.31.1-linux-amd64.tar.gz -o .tmp/istioctl.tar.gz
+          tar -xzf .tmp/istioctl.tar.gz -C .tmp/bin
+          chmod +x .tmp/bin/kind .tmp/bin/istioctl
+          echo "$GITHUB_WORKSPACE/.tmp/bin" >> "$GITHUB_PATH"
+      - name: Deploy isolated identity cluster
+        run: python scripts/identity_deploy.py up
+      - name: Real WebAuthn, device mTLS, JWT, workload and dynamic policy verification
+        run: python scripts/verify_identity.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: identity-verification-results
+          path: artifacts/identity-e2e.json
+          if-no-files-found: ignore
+      # Hosted runner lifecycle reclaims this isolated environment. No local or
+      # user-owned cluster / volume deletion command is part of this workflow.

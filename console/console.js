@@ -1,5 +1,5 @@
 const $=id=>document.getElementById(id);
-let csrf='',humanToken='',writeToken='',sessions={},busy=false;
+let csrf='',humanToken='',writeToken='',sessions={},busy=false,lastResult=null;
 const dump=value=>JSON.stringify(value,null,2);
 async function api(path,body,method=body===undefined?'GET':'POST'){
   const response=await fetch(path,{method,headers:{'Content-Type':'application/json','x-mesh-console':csrf},body:body===undefined?undefined:JSON.stringify(body)});
@@ -46,6 +46,7 @@ function preview(){const resource=$('resource').value;$('preview').textContent='
 $('resource').addEventListener('change',preview);$('owner').addEventListener('change',preview);
 const labels={'device-gateway':'Device Ingress',frontend:'Frontend PEP',salary:'Salary PEP',profile:'Profile PEP',external_pe:'External PE',resource:'Resource 執行'};
 function render(result){
+  lastResult=result;
   $('empty').hidden=true;$('result').hidden=false;$('attempt-id').textContent=result.attempt_id;
   const statuses=result.responses.map(r=>r.status);$('http-status').textContent='HTTP '+statuses.join(' → ');$('http-status').className='pill '+(statuses.every(s=>s===200)?'allow':statuses.some(s=>s===403||s===401)?'deny':'neutral');
   $('stages').replaceChildren();
@@ -72,6 +73,7 @@ async function experiment(adjust=false){
   throw new Error('觀測逾時；請檢查 PE 恢復與叢集狀態。');
 }
 action('run',()=>experiment());action('adjust',()=>experiment(true));
+action('reread',async()=>{if(!lastResult)throw new Error('先送出一筆實驗請求');const fresh=await api('/api/inspector/evidence/'+lastResult.attempt_id);render({...lastResult,...fresh});});
 function mode(advanced){$('inspector-panel').hidden=!advanced;$('inspector-mode').classList.toggle('active',advanced);$('demo-mode').classList.toggle('active',!advanced);}
 $('demo-mode').onclick=()=>mode(false);$('inspector-mode').onclick=()=>mode(true);
 action('certificates',async()=>{$('public-certs').textContent=dump(await api('/api/inspector/certificates'));});

@@ -43,3 +43,22 @@ def test_html_defaults_to_demo_and_provides_unknown_states(client):
     assert 'id="inspector-panel" hidden' in html.text
     assert 'NOT_OBSERVED / UNKNOWN' in html.text
     assert "frame-ancestors 'none'" in html.headers['content-security-policy']
+
+
+def test_missing_jwt_experiment_omits_empty_authorization_header(monkeypatch):
+    import httpx
+    from scripts.security_inspector import SecurityOperator, Experiment
+    operator = SecurityOperator()
+    seen = []
+    def agent(path, body, token, method='POST', headers=None):
+        seen.append(headers)
+        return httpx.Response(401, text='JWT required')
+    monkeypatch.setattr(operator, 'agent', agent)
+    monkeypatch.setattr(operator, 'evidence', lambda *args: {'attempt_id': args[0]})
+    result = operator.perform(Experiment(attack='missing-jwt'))
+    assert result['responses'][0]['status'] == 401
+    assert len(seen) == 1 and 'authorization' not in seen[0]
+
+
+def test_evidence_reread_accepts_only_attempt_identifiers(client):
+    assert client.get('/api/inspector/evidence/invalid-id').status_code == 400

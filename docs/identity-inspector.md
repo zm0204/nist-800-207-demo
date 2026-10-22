@@ -115,9 +115,15 @@ Envoy JWT 驗證與 Istio AuthorizationPolicy 的 CUSTOM／DENY／ALLOW 是不�
 .\.venv\Scripts\python.exe scripts/identity_deploy.py status
 ```
 
+本機 Python 回歸套件已實測 **139 項通過**。Windows `.cmd --no-browser` 已實際重複部署並成功啟動；尚未進行整台 Windows 重新開機後的冷啟動驗收。新增 GitHub Actions workflow 已提供，尚未推送或在遠端執行，不能宣稱遠端 CI 通過。
+
+**26 組真實 K8s 整合驗證已通過**；固定證據快照見 [2026-10-22 整合報告](evidence/2026-10-22/identity-e2e.json)。包含 11 份實際 Workload 公開憑證。
+
 `artifacts/identity-e2e.json` 保存此次真正 K8s 測試的時間、程式碼摘要、Image ID、每個 Attempt 的 HTTP、PE Audit、Envoy Log、資源執行查詢、公開憑證與 CUSTOM Coverage。測試使用專屬 software authenticator 產生真實 WebAuthn 簽章；這不代表已自動測試使用者的 Windows Hello／硬體金鑰。
 
 `artifacts/compose-verification.json` 是獨立 Compose project 的原 207 回歸結果。2026-10-22 已實測 9 組通過；測試使用新的命名 Volumes，結束後僅 stop 該 project。原展示的 Volumes 與資料未清除。
+
+整合測試重用同一登入下的有限資源 Session，重新登入及結束時只撤銷該次測試建立的 Session，避免測試本身累積背景重評估。測試前的 Bob 風險復原為明確記錄的 operator setup，不屬於登入或 Step-Up 流程。
 
 事件 ID 是關聯標記，不是授權證明。HTTP 尚未建立的錯誤只有發起端觀測，沒有假後端 Span。PE 決策來自受保護 Context Audit；資源執行來自接收端持久化 Journal；Envoy 的 TLS／SPIFFE 資訊來自實際 Log 與公開憑證。正常完成、Native 拒絕、ext_authz 拒絕皆保留不同來源。
 

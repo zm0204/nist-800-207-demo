@@ -1,0 +1,15 @@
+{
+  "mode": "Actual Docker Compose + Envoy + mTLS",
+  "passed": 9,
+  "checks": [
+    "1 Normal ALLOW -> real protected Resource",
+    "2 Least privilege DENY",
+    "3 Compromise -> autonomous REVOKE -> PEP blocked",
+    "4 High-risk IP -> REVOKE",
+    "5 Abnormal behavior -> REVOKE",
+    "6 Host has no Resource port and non-data agent cannot bypass PEP",
+    "Certificate/session binding, forged XFCC and missing certificate rejected",
+    "Active SSE resource stream closes after continuous REVOKE",
+    "PE unavailable -> fail closed, session revoked"
+  ]
+}
