@@ -1,5 +1,6 @@
 """Policy Administrator: device-bound scoped sessions and continuous evaluation."""
 import asyncio
+import hashlib
 import json
 import re
 import secrets
@@ -8,7 +9,7 @@ from contextlib import asynccontextmanager
 from urllib.parse import urlsplit
 from fastapi import FastAPI, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse, Response
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from app.common import db, call, url, protected
 
 def initialize():
@@ -152,3 +153,54 @@ async def manual_revoke(body:Revoke):
     s=load(body.session_id)
     await revoke(s,{'decision':'REVOKE','trust_score':0,'reasons':['administrator_revocation']})
     return public(load(body.session_id))
+
+
+class Exchange(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    scope: str | None = None
+
+
+@app.get('/.well-known/jwks.json')
+def jwks():
+    from app.user_tokens import public_jwks
+    try:
+        return public_jwks()
+    except (OSError, KeyError, ValueError):
+        raise HTTPException(503, 'signing_key_unavailable')
+
+
+@app.post('/token/exchange')
+async def token_exchange(body: Exchange, request: Request):
+    from app.user_tokens import issue, ISSUER, AUDIENCE, MAX_TTL
+    import os
+    s = load(bearer(request))
+    if device_identity(request) != s['device_id'] or s['state'] != 'ACTIVE':
+        raise HTTPException(403, 'active_device_bound_session_required')
+    scope = {'/api/salary': 'salary:read', '/api/profile': 'profile:read'}.get(s['scope']['path'])
+    if s['scope']['method'] != 'GET' or not scope or body.scope not in (None, scope):
+        raise HTTPException(403, 'session_scope_exceeded')
+    try:
+        result = await decision(s)
+        if result['decision'] != 'ALLOW':
+            await revoke(s, result)
+            raise HTTPException(403, 'session_risk_denied')
+        identity = await call(url('identity'), '/introspect', 'POST', {'token': s['human_token']})
+        if not identity.get('valid') or identity.get('subject') != s['subject'] or not identity.get('auth_time'):
+            raise HTTPException(403, 'fresh_verified_identity_required')
+        now = int(time.time())
+        claims = dict(iss=os.environ.get('USER_TOKEN_ISSUER', ISSUER), aud=AUDIENCE,
+                      sub=s['subject'], role='employee', device_id=s['device_id'],
+                      scope=scope, iat=now, exp=min(now+MAX_TTL, int(identity['expires'])),
+                      auth_time=identity['auth_time'], jti=secrets.token_urlsafe(24),
+                      sid=hashlib.sha256(s['session_id'].encode()).hexdigest())
+        latest = load(s['session_id'])
+        if latest['state'] != 'ACTIVE':
+            raise HTTPException(403, 'session_revoked')
+        token = issue(claims)
+        await log({'kind': 'token_exchange', 'subject': s['subject'], 'scope': scope,
+                   'device_id': s['device_id'], 'jti': claims['jti']})
+        return {'access_token': token, 'token_type': 'Bearer', 'expires_in': claims['exp']-now}
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(503, 'token_exchange_unavailable_fail_closed')

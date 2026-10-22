@@ -1,0 +1,95 @@
+# Isolated identity-aware deployment. Render public JWKS before applying.
+apiVersion: security.istio.io/v1
+kind: PeerAuthentication
+metadata: {name: strict-mtls, namespace: zta-identity}
+spec:
+  mtls: {mode: STRICT}
+---
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata: {name: default-deny, namespace: zta-identity}
+spec: {}
+---
+apiVersion: security.istio.io/v1
+kind: RequestAuthentication
+metadata: {name: user-jwt-every-hop, namespace: zta-identity}
+spec:
+  selector: {matchLabels: {identity-protected: 'true'}}
+  jwtRules:
+    - issuer: https://zta.example/identity
+      audiences: [zta-hr]
+      jwks: RENDERED_PUBLIC_JWKS
+      forwardOriginalToken: true
+---
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata: {name: require-user-jwt, namespace: zta-identity}
+spec:
+  selector: {matchLabels: {identity-protected: 'true'}}
+  action: DENY
+  rules:
+    - from:
+        - source: {notRequestPrincipals: ['*']}
+      to:
+        - operation: {ports: ['8000']}
+---
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata: {name: probe-to-frontend, namespace: zta-identity}
+spec:
+  selector: {matchLabels: {app: frontend}}
+  action: ALLOW
+  rules:
+    - from:
+        - source: {principals: [cluster.local/ns/zta-identity/sa/probe], requestPrincipals: ['*']}
+      to:
+        - operation: {ports: ['8000'], methods: [GET], paths: ['/api/salary/*', '/api/profile/*']}
+        - operation: {ports: ['8000'], methods: [POST], paths: ['/api/salary/*/adjust']}
+---
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata: {name: frontend-to-salary, namespace: zta-identity}
+spec:
+  selector: {matchLabels: {app: salary}}
+  action: ALLOW
+  rules:
+    - from:
+        - source: {principals: [cluster.local/ns/zta-identity/sa/frontend], requestPrincipals: ['*']}
+      to:
+        - operation: {ports: ['8000'], methods: [GET], paths: ['/api/salary/*']}
+        - operation: {ports: ['8000'], methods: [POST], paths: ['/api/salary/*/adjust']}
+---
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata: {name: frontend-to-profile, namespace: zta-identity}
+spec:
+  selector: {matchLabels: {app: profile}}
+  action: ALLOW
+  rules:
+    - from:
+        - source: {principals: [cluster.local/ns/zta-identity/sa/frontend], requestPrincipals: ['*']}
+      to:
+        - operation: {ports: ['8000'], methods: [GET], paths: ['/api/profile/*']}
+---
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata: {name: backend-external-decision, namespace: zta-identity}
+spec:
+  selector: {matchLabels: {role: backend}}
+  action: CUSTOM
+  provider: {name: identity-pe}
+  # All application-port traffic, including unexpected methods/paths. CUSTOM is
+  # evaluated before DENY and ALLOW; PE approval cannot override native denial.
+  rules:
+    - to:
+        - operation: {ports: ['8000']}
+---
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata: {name: workload-mtls, namespace: zta-identity}
+spec:
+  host: '*.zta-identity.svc.cluster.local'
+  trafficPolicy:
+    tls: {mode: ISTIO_MUTUAL}
+    connectionPool:
+      tcp: {maxConnectionDuration: 1800s}

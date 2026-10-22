@@ -3,3 +3,4 @@ uvicorn==0.34.2
 httpx==0.28.1
 webauthn==2.5.2
 cryptography==44.0.3
+PyJWT==2.15.1

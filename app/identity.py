@@ -23,6 +23,8 @@ def initialize():
         c.execute('CREATE TABLE IF NOT EXISTS credential (id TEXT PRIMARY KEY, public_key BLOB, counter INTEGER)')
         c.execute('CREATE TABLE IF NOT EXISTS challenge (id TEXT PRIMARY KEY, kind TEXT, challenge BLOB, expires REAL)')
         c.execute('CREATE TABLE IF NOT EXISTS token (hash TEXT PRIMARY KEY, expires REAL)')
+        if 'auth_time' not in {r['name'] for r in c.execute('PRAGMA table_info(token)')}:
+            c.execute('ALTER TABLE token ADD COLUMN auth_time INTEGER NOT NULL DEFAULT 0')
 initialize()
 
 def save_challenge(kind,options):
@@ -96,7 +98,8 @@ def login_verify(body:Verification):
             raise HTTPException(400,'authentication_verification_failed')
         c.execute('UPDATE credential SET counter=? WHERE id=?',(v.new_sign_count,row['id']))
         token=secrets.token_urlsafe(48); expires=time.time()+TOKEN_TTL
-        c.execute('INSERT INTO token VALUES (?,?)',(hashlib.sha256(token.encode()).hexdigest(),expires))
+        c.execute('INSERT INTO token(hash,expires,auth_time) VALUES (?,?,?)',
+                  (hashlib.sha256(token.encode()).hexdigest(),expires,int(time.time())))
         c.execute('DELETE FROM token WHERE expires<?',(time.time(),))
     return {'subject':'alice','token':token,'expires':expires}
 
@@ -105,6 +108,7 @@ class Token(BaseModel): token:str
 @app.post('/introspect',dependencies=[Depends(protected)])
 def introspect(body:Token):
     with db('identity') as c:
-        row=c.execute('SELECT expires FROM token WHERE hash=?',(hashlib.sha256(body.token.encode()).hexdigest(),)).fetchone()
+        row=c.execute('SELECT expires,auth_time FROM token WHERE hash=?',(hashlib.sha256(body.token.encode()).hexdigest(),)).fetchone()
     valid=bool(row and row['expires']>time.time())
-    return {'valid':valid,'subject':'alice' if valid else None,'expires':row['expires'] if row else 0}
+    return {'valid':valid,'subject':'alice' if valid else None,'expires':row['expires'] if row else 0,
+            'auth_time':row['auth_time'] if row else 0}
