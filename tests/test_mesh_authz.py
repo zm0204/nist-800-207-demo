@@ -74,3 +74,22 @@ async def test_pe_transport_outage_fails_closed(monkeypatch):
         raise httpx.ConnectError('PE offline', request=request)
     response = await grpc_check(monkeypatch, check_request(), offline)
     assert response.status.code == 7 and response.denied_response.status.code == 503
+
+
+@pytest.mark.asyncio
+async def test_identity_adapter_forwards_token_to_dynamic_pe_never_identity_headers(monkeypatch):
+    import json
+    monkeypatch.setenv('IDENTITY_MODE', '1')
+    request = check_request()
+    request.attributes.request.http.headers['authorization'] = 'Bearer test-credential'
+    request.attributes.request.http.headers['x-attempt-id'] = 'unique-attempt'
+    request.attributes.request.http.headers['x-request-id'] = 'unique-request'
+    def pe(r):
+        assert r.url.path == '/evaluate-resource'
+        body = json.loads(r.content)
+        assert body['source'] == SOURCE and body['token'] == 'test-credential'
+        assert body['attempt_id'] == 'unique-attempt' and body['request_id'] == 'unique-request'
+        assert 'x-zta-subject' not in body and 'role' not in body
+        return httpx.Response(200, json={'decision': 'DENY'})
+    response = await grpc_check(monkeypatch, request, pe)
+    assert response.status.code == 7

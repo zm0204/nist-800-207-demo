@@ -158,6 +158,7 @@ async def manual_revoke(body:Revoke):
 class Exchange(BaseModel):
     model_config = ConfigDict(extra='forbid')
     scope: str | None = None
+    step_up_token: str | None = None
 
 
 @app.get('/.well-known/jwks.json')
@@ -177,7 +178,10 @@ async def token_exchange(body: Exchange, request: Request):
     if device_identity(request) != s['device_id'] or s['state'] != 'ACTIVE':
         raise HTTPException(403, 'active_device_bound_session_required')
     scope = {'/api/salary': 'salary:read', '/api/profile': 'profile:read'}.get(s['scope']['path'])
-    if s['scope']['method'] != 'GET' or not scope or body.scope not in (None, scope):
+    from app.hr_policy import DIRECTORY, STEP_UP_AGE
+    user = DIRECTORY.get(s['subject'])
+    write = body.scope == 'salary:write' and scope == 'salary:read' and user and user['can_adjust']
+    if s['scope']['method'] != 'GET' or not scope or (body.scope not in (None, scope) and not write):
         raise HTTPException(403, 'session_scope_exceeded')
     try:
         result = await decision(s)
@@ -187,10 +191,21 @@ async def token_exchange(body: Exchange, request: Request):
         identity = await call(url('identity'), '/introspect', 'POST', {'token': s['human_token']})
         if not identity.get('valid') or identity.get('subject') != s['subject'] or not identity.get('auth_time'):
             raise HTTPException(403, 'fresh_verified_identity_required')
+        if body.step_up_token:
+            identity = await call(url('identity'), '/introspect', 'POST', {'token': body.step_up_token})
+            if not identity.get('valid') or identity.get('subject') != s['subject']:
+                raise HTTPException(403, 'same_subject_step_up_required')
         now = int(time.time())
+        if write and now-identity['auth_time'] > STEP_UP_AGE:
+            raise HTTPException(403, 'step_up_required')
+        if write:
+            scope = 'salary:write'
+        if not user:
+            raise HTTPException(403, 'unknown_directory_subject')
         claims = dict(iss=os.environ.get('USER_TOKEN_ISSUER', ISSUER), aud=AUDIENCE,
-                      sub=s['subject'], role='employee', device_id=s['device_id'],
-                      scope=scope, iat=now, exp=min(now+MAX_TTL, int(identity['expires'])),
+                      sub=s['subject'], role=user['role'], device_id=s['device_id'],
+                      scope=scope, iat=now, exp=min(now+(30 if write else MAX_TTL), int(identity['expires']),
+                          identity['auth_time']+STEP_UP_AGE if write else now+MAX_TTL),
                       auth_time=identity['auth_time'], jti=secrets.token_urlsafe(24),
                       sid=hashlib.sha256(s['session_id'].encode()).hexdigest())
         latest = load(s['session_id'])
@@ -204,3 +219,25 @@ async def token_exchange(body: Exchange, request: Request):
         raise
     except Exception:
         raise HTTPException(503, 'token_exchange_unavailable_fail_closed')
+
+
+class CredentialContext(BaseModel):
+    sid: str
+    subject: str
+    device_id: str
+
+
+@app.post('/credential-context', dependencies=[Depends(protected)])
+async def credential_context(body: CredentialContext):
+    with db('pa') as c:
+        sessions = [json.loads(r[0]) for r in c.execute('SELECT value FROM sessions')]
+    for s in sessions:
+        if secrets.compare_digest(hashlib.sha256(s['session_id'].encode()).hexdigest(), body.sid):
+            if s['state'] != 'ACTIVE' or s['subject'] != body.subject or s['device_id'] != body.device_id:
+                return {'valid': False}
+            try:
+                result = await decision(s)
+                return {'valid': result['decision'] == 'ALLOW' and load(s['session_id'])['state'] == 'ACTIVE'}
+            except Exception:
+                raise HTTPException(503, 'session_context_unavailable')
+    return {'valid': False}

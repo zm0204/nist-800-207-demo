@@ -5,7 +5,7 @@ import os
 import secrets
 import time
 from fastapi import FastAPI, Depends, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from webauthn import (generate_registration_options, generate_authentication_options,
                       verify_registration_response, verify_authentication_response)
 from webauthn.helpers import options_to_json
@@ -25,43 +25,78 @@ def initialize():
         c.execute('CREATE TABLE IF NOT EXISTS token (hash TEXT PRIMARY KEY, expires REAL)')
         if 'auth_time' not in {r['name'] for r in c.execute('PRAGMA table_info(token)')}:
             c.execute('ALTER TABLE token ADD COLUMN auth_time INTEGER NOT NULL DEFAULT 0')
+        for table in ('credential', 'challenge', 'token'):
+            if 'subject' not in {r['name'] for r in c.execute('PRAGMA table_info('+table+')')}:
+                c.execute('ALTER TABLE '+table+" ADD COLUMN subject TEXT NOT NULL DEFAULT 'alice'")
+        c.execute('CREATE TABLE IF NOT EXISTS invitation (hash TEXT PRIMARY KEY, subject TEXT, expires REAL)')
+        if 'allow_add' not in {r['name'] for r in c.execute('PRAGMA table_info(challenge)')}:
+            c.execute('ALTER TABLE challenge ADD COLUMN allow_add INTEGER NOT NULL DEFAULT 0')
 initialize()
 
-def save_challenge(kind,options):
+def save_challenge(kind,options,subject='alice',allow_add=False):
     ceremony=secrets.token_urlsafe(32)
     with db('identity') as c:
         c.execute('DELETE FROM challenge WHERE expires<?',(time.time(),))
-        c.execute('INSERT INTO challenge VALUES (?,?,?,?)',(ceremony,kind,options.challenge,time.time()+120))
+        c.execute('INSERT INTO challenge(id,kind,challenge,expires,subject,allow_add) VALUES (?,?,?,?,?,?)',
+                  (ceremony,kind,options.challenge,time.time()+120,subject,int(allow_add)))
     return {'ceremony':ceremony,'publicKey':json.loads(options_to_json(options))}
 
-def consume(ceremony,kind):
+def consume(ceremony,kind,with_subject=False):
     with db('identity') as c:
         c.execute('BEGIN IMMEDIATE')
         row=c.execute('SELECT * FROM challenge WHERE id=?',(ceremony,)).fetchone()
         c.execute('DELETE FROM challenge WHERE id=?',(ceremony,))
     if not row or row['kind']!=kind or row['expires']<time.time():
         raise HTTPException(400,'invalid_expired_or_replayed_challenge')
-    return row['challenge']
+    return (row['challenge'], row['subject'], bool(row['allow_add'])) if with_subject else row['challenge']
 
 class Verification(BaseModel):
     ceremony:str
     credential:dict
 
+class Enrollment(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    invitation: str | None = None
+
+class Subject(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    subject: str = 'alice'
+
+@app.post('/enrollment/invite', dependencies=[Depends(protected)])
+def invite(body: Subject):
+    from app.hr_policy import DIRECTORY
+    if body.subject not in DIRECTORY:
+        raise HTTPException(400, 'unknown_directory_subject')
+    value = secrets.token_urlsafe(32)
+    with db('identity') as c:
+        c.execute('INSERT INTO invitation VALUES (?,?,?)',
+                  (hashlib.sha256(value.encode()).hexdigest(), body.subject, time.time()+300))
+    return {'invitation': value, 'subject': body.subject}
+
 @app.get('/health')
 def health(): return {'ok':True}
 
 @app.post('/register/options')
-def register_options():
+def register_options(body: Enrollment = Enrollment()):
+    subject = 'alice'
     with db('identity') as c:
-        if c.execute('SELECT COUNT(*) FROM credential').fetchone()[0]:
+        c.execute('BEGIN IMMEDIATE')
+        if body.invitation:
+            hashed = hashlib.sha256(body.invitation.encode()).hexdigest()
+            row = c.execute('SELECT * FROM invitation WHERE hash=?', (hashed,)).fetchone()
+            if not row or row['expires'] <= time.time():
+                raise HTTPException(403, 'valid_enrollment_invitation_required')
+            subject = row['subject']
+            c.execute('DELETE FROM invitation WHERE hash=?', (hashed,))
+        if not body.invitation and c.execute('SELECT COUNT(*) FROM credential WHERE subject=?', (subject,)).fetchone()[0]:
             raise HTTPException(409,'alice already enrolled; use login or explicitly reset demo storage')
     return save_challenge('register',generate_registration_options(
-        rp_id=RP,rp_name='800-207 Demo',user_id=b'alice',user_name='alice',
-        authenticator_selection=AuthenticatorSelectionCriteria(user_verification=UserVerificationRequirement.REQUIRED)))
+        rp_id=RP,rp_name='800-207 Demo',user_id=subject.encode(),user_name=subject,
+        authenticator_selection=AuthenticatorSelectionCriteria(user_verification=UserVerificationRequirement.REQUIRED)), subject, bool(body.invitation))
 
 @app.post('/register/verify')
 def register_verify(body:Verification):
-    challenge=consume(body.ceremony,'register')
+    challenge,subject,allow_add=consume(body.ceremony,'register',True)
     try:
         v=verify_registration_response(credential=body.credential,expected_challenge=challenge,
             expected_rp_id=RP,expected_origin=ORIGIN,require_user_verification=True)
@@ -69,27 +104,28 @@ def register_verify(body:Verification):
         raise HTTPException(400,'registration_verification_failed')
     with db('identity') as c:
         c.execute('BEGIN IMMEDIATE')
-        if c.execute('SELECT COUNT(*) FROM credential').fetchone()[0]:
+        if not allow_add and c.execute('SELECT COUNT(*) FROM credential WHERE subject=?',(subject,)).fetchone()[0]:
             raise HTTPException(409,'subject already enrolled')
-        c.execute('INSERT INTO credential VALUES (?,?,?)',(body.credential['id'],v.credential_public_key,v.sign_count))
-    return {'subject':'alice','registered':True}
+        c.execute('INSERT INTO credential(id,public_key,counter,subject) VALUES (?,?,?,?)',
+                  (body.credential['id'],v.credential_public_key,v.sign_count,subject))
+    return {'subject':subject,'registered':True}
 
 @app.post('/login/options')
-def login_options():
+def login_options(body: Subject = Subject()):
     from webauthn import base64url_to_bytes
-    with db('identity') as c: rows=c.execute('SELECT id FROM credential').fetchall()
+    with db('identity') as c: rows=c.execute('SELECT id FROM credential WHERE subject=?',(body.subject,)).fetchall()
     if not rows: raise HTTPException(409,'register a passkey first')
     return save_challenge('login',generate_authentication_options(rp_id=RP,
         user_verification=UserVerificationRequirement.REQUIRED,
-        allow_credentials=[PublicKeyCredentialDescriptor(id=base64url_to_bytes(r['id'])) for r in rows]))
+        allow_credentials=[PublicKeyCredentialDescriptor(id=base64url_to_bytes(r['id'])) for r in rows]), body.subject)
 
 @app.post('/login/verify')
 def login_verify(body:Verification):
-    challenge=consume(body.ceremony,'login')
+    challenge,subject,_=consume(body.ceremony,'login',True)
     with db('identity') as c:
         c.execute('BEGIN IMMEDIATE')
         row=c.execute('SELECT * FROM credential WHERE id=?',(body.credential.get('id',''),)).fetchone()
-        if not row: raise HTTPException(400,'unknown_credential')
+        if not row or row['subject'] != subject: raise HTTPException(400,'unknown_credential')
         try:
             v=verify_authentication_response(credential=body.credential,expected_challenge=challenge,
                 expected_rp_id=RP,expected_origin=ORIGIN,credential_public_key=row['public_key'],
@@ -98,17 +134,17 @@ def login_verify(body:Verification):
             raise HTTPException(400,'authentication_verification_failed')
         c.execute('UPDATE credential SET counter=? WHERE id=?',(v.new_sign_count,row['id']))
         token=secrets.token_urlsafe(48); expires=time.time()+TOKEN_TTL
-        c.execute('INSERT INTO token(hash,expires,auth_time) VALUES (?,?,?)',
-                  (hashlib.sha256(token.encode()).hexdigest(),expires,int(time.time())))
+        c.execute('INSERT INTO token(hash,expires,auth_time,subject) VALUES (?,?,?,?)',
+                  (hashlib.sha256(token.encode()).hexdigest(),expires,int(time.time()),subject))
         c.execute('DELETE FROM token WHERE expires<?',(time.time(),))
-    return {'subject':'alice','token':token,'expires':expires}
+    return {'subject':subject,'token':token,'expires':expires}
 
 class Token(BaseModel): token:str
 
 @app.post('/introspect',dependencies=[Depends(protected)])
 def introspect(body:Token):
     with db('identity') as c:
-        row=c.execute('SELECT expires,auth_time FROM token WHERE hash=?',(hashlib.sha256(body.token.encode()).hexdigest(),)).fetchone()
+        row=c.execute('SELECT expires,auth_time,subject FROM token WHERE hash=?',(hashlib.sha256(body.token.encode()).hexdigest(),)).fetchone()
     valid=bool(row and row['expires']>time.time())
-    return {'valid':valid,'subject':'alice' if valid else None,'expires':row['expires'] if row else 0,
+    return {'valid':valid,'subject':row['subject'] if valid else None,'expires':row['expires'] if row else 0,
             'auth_time':row['auth_time'] if row else 0}

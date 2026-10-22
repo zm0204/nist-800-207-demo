@@ -9,6 +9,7 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 
 @pytest.fixture
 def keys(tmp_path, monkeypatch):
+    monkeypatch.setenv('STATE_DIR', str(tmp_path))
     from app import user_tokens as tokens
     private = rsa.generate_private_key(public_exponent=65537, key_size=2048)
     path = tmp_path / 'signing.pem'
@@ -51,7 +52,7 @@ def test_missing_claim_signature_algorithm_and_key_confusion(keys):
     payload = claims()
     del payload['jti']
     for token in [jwt.encode(payload, private, algorithm='RS256', headers={'kid': tokens.public_jwks()['keys'][0]['kid']}),
-                  jwt.encode(claims(), 'attacker-secret', algorithm='HS256', headers={'kid': 'invented'}),
+                  jwt.encode(claims(), 'attacker-secret-that-is-at-least-32-bytes', algorithm='HS256', headers={'kid': 'invented'}),
                   jwt.encode(claims(), key='', algorithm='none'), 'forged']:
         with pytest.raises(ValueError):
             tokens.verify(token)

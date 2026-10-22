@@ -32,12 +32,19 @@ class Authorization(auth_grpc.AuthorizationServicer):
             return denied()
         body = dict(source=source, destination=destination,
                     method=attributes.request.http.method, path=attributes.request.http.path)
+        endpoint = '/evaluate-service'
+        if os.environ.get('IDENTITY_MODE') == '1':
+            endpoint = '/evaluate-resource'
+            headers = attributes.request.http.headers
+            authorization = headers.get('authorization', '')
+            body.update(token=authorization[7:] if authorization.startswith('Bearer ') else '',
+                        request_id=headers.get('x-request-id', ''), attempt_id=headers.get('x-attempt-id', ''))
         try:
             key = os.environ['SERVICE_KEY']
             if not key:
                 return denied(503)
             async with httpx.AsyncClient(timeout=2, trust_env=False, transport=pe_transport) as client:
-                response = await client.post(os.environ.get('PE_URL', 'http://pe:8000') + '/evaluate-service',
+                response = await client.post(os.environ.get('PE_URL', 'http://pe:8000') + endpoint,
                                              headers={'x-service-key': key}, json=body)
             response.raise_for_status()
             allowed = response.json().get('decision') == 'ALLOW'

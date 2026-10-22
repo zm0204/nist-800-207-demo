@@ -18,8 +18,10 @@ def resource_claims(request, resource, owner, method='GET'):
     required = resource + (':read' if method == 'GET' else ':write')
     if required not in claims['scope'].split():
         raise HTTPException(403, 'scope_denied')
-    if claims['sub'] != owner:
-        raise HTTPException(403, 'resource_ownership_denied')
+    from app.hr_policy import evaluate_resource
+    result = evaluate_resource(claims, '/api/'+resource+'/'+owner+('/adjust' if method == 'POST' else ''), method, {}, 0)
+    if result['decision'] != 'ALLOW':
+        raise HTTPException(403, result['reason'])
     return claims
 
 

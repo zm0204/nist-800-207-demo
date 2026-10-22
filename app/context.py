@@ -2,6 +2,7 @@
 import json
 import hashlib
 import time
+import os
 from fastapi import FastAPI, Depends, HTTPException
 from pydantic import BaseModel, Field
 from app.common import db, protected
@@ -10,6 +11,8 @@ app = FastAPI(title='CDM / Threat Intelligence / Policy DB / Telemetry', depende
 DEFAULT = {'device':{'id':'device-a','managed':True,'compromised':False,'os_current':True},
            'context':{'source_ip':'192.0.2.10','high_risk_ip':False,'abnormal':False},
            'policy':{'version':1,'threshold':60,'grants':{'alice':['GET /api/salary','GET /api/profile','GET /api/stream']}}}
+if os.environ.get('HR_MODE') == '1':
+    DEFAULT['policy']['grants']['bob'] = ['GET /api/salary', 'GET /api/profile']
 
 def initialize():
     with db('context') as c:
@@ -48,9 +51,10 @@ def event(value:dict):
     return {'ok':True}
 
 @app.get('/events')
-def events():
+def events(attempt_id: str | None = None):
     with db('context') as c:
-        return [dict(json.loads(r['value']), event_id=r['id'],timestamp=r['ts']) for r in c.execute('SELECT * FROM events ORDER BY id DESC LIMIT 100')]
+        rows = c.execute('SELECT * FROM events WHERE json_extract(value,\'$.attempt_id\')=? ORDER BY id DESC LIMIT 100', (attempt_id,)) if attempt_id else c.execute('SELECT * FROM events ORDER BY id DESC LIMIT 100')
+        return [dict(json.loads(r['value']), event_id=r['id'],timestamp=r['ts']) for r in rows]
 
 class Simulation(BaseModel):
     action: str

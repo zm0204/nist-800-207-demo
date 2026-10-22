@@ -41,3 +41,20 @@ async def test_frontend_forwards_only_user_token_and_correlation(keys, monkeypat
     assert seen[0].headers['authorization'] == 'Bearer '+token
     assert 'x-role' not in seen[0].headers and 'x-forwarded-client-cert' not in seen[0].headers
     assert seen[0].headers['x-attempt-id'] == 'abc'
+
+
+def test_sensitive_execution_is_recorded_only_after_authorization(keys):
+    from app.mesh_salary import app
+    from app.resource_evidence import executions
+    from uuid import uuid4
+    attempt = str(uuid4())
+    payload = {**claims(), 'sub': 'bob', 'role': 'hr', 'scope': 'salary:write'}
+    headers = {'authorization': 'Bearer '+keys[0].issue(payload), 'x-attempt-id': attempt}
+    with TestClient(app) as client:
+        assert client.post('/api/salary/alice/adjust', json={'amount': 60000}, headers=headers).status_code == 200
+        assert len(executions(attempt)) == 1
+        denied = str(uuid4())
+        headers['x-attempt-id'] = denied
+        headers['authorization'] = 'Bearer '+keys[0].issue({**payload, 'sub': 'alice', 'role': 'employee'})
+        assert client.post('/api/salary/bob/adjust', json={'amount': 999999}, headers=headers).status_code == 403
+        assert executions(denied) == []

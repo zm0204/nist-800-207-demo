@@ -43,3 +43,33 @@ def test_exchange_jwks_is_public_and_no_signing_key_is_generated(stack, keys, mo
     monkeypatch.setenv('USER_SIGNING_KEY_FILE', str(tmp_path/'absent'))
     assert exchange(pc, sid).status_code == 503
     assert not (tmp_path/'absent').exists()
+
+
+def test_hr_write_scope_requires_fresh_same_subject_webauthn(stack, keys):
+    import hashlib
+    from fastapi.testclient import TestClient
+    from tests.authenticator import Authenticator
+    from app import identity
+    from app.common import db
+    pc, cc, alice_human, _ = stack
+    cc.put('/policy', json={'threshold': 60, 'grants': {'alice': ['GET /api/salary'], 'bob': ['GET /api/salary']}})
+    auth = Authenticator()
+    with TestClient(identity.app) as client:
+        invitation = client.post('/enrollment/invite', json={'subject': 'bob'}, headers={'x-service-key': 'test-key'}).json()
+        o = client.post('/register/options', json={'invitation': invitation['invitation']}).json()
+        assert client.post('/register/verify', json={'ceremony': o['ceremony'], 'credential': auth.register(o['publicKey'])}).status_code == 200
+        def login():
+            o = client.post('/login/options', json={'subject': 'bob'}).json()
+            return client.post('/login/verify', json={'ceremony': o['ceremony'], 'credential': auth.login(o['publicKey'])}).json()['token']
+        bob_human = login()
+        sid = create(pc, bob_human).json()['session_id']
+        with db('identity') as c:
+            c.execute('UPDATE token SET auth_time=? WHERE hash=?', (int(time.time())-120, hashlib.sha256(bob_human.encode()).hexdigest()))
+        assert exchange(pc, sid, scope='salary:write').status_code == 403
+        assert exchange(pc, sid, scope='salary:write', step_up_token=alice_human).status_code == 403
+        fresh = login()
+        r = exchange(pc, sid, scope='salary:write', step_up_token=fresh)
+        assert r.status_code == 200
+        claims = keys[0].verify(r.json()['access_token'])
+        assert claims['sub'] == 'bob' and claims['role'] == 'hr' and claims['scope'] == 'salary:write'
+        assert 0 < r.json()['expires_in'] <= 30
