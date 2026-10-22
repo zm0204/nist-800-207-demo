@@ -376,6 +376,12 @@ def default_tool(name):
 
 
 def main():
+    # The default UI now runs the integrated identity-aware inspector. Legacy
+    # MeshOperator/create_app remain importable for workload-only regressions.
+    from scripts.security_inspector import main as inspector_main
+    return inspector_main()
+
+def legacy_main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--kubectl', default=default_tool('kubectl'))
     parser.add_argument('--kind', default=default_tool('kind'))

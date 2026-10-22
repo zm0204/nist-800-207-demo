@@ -41,10 +41,10 @@ spec:
   action: ALLOW
   rules:
     - from:
-        - source: {principals: [cluster.local/ns/zta-identity/sa/probe], requestPrincipals: ['*']}
+        - source: {principals: [cluster.local/ns/zta-identity/sa/probe, cluster.local/ns/zta-identity/sa/device-gateway], requestPrincipals: ['*']}
       to:
         - operation: {ports: ['8000'], methods: [GET], paths: ['/api/salary/*', '/api/profile/*']}
-        - operation: {ports: ['8000'], methods: [POST], paths: ['/api/salary/*/adjust']}
+        - operation: {ports: ['8000'], methods: [POST], paths: ['/api/salary/{*}/adjust']}
 ---
 apiVersion: security.istio.io/v1
 kind: AuthorizationPolicy
@@ -57,7 +57,7 @@ spec:
         - source: {principals: [cluster.local/ns/zta-identity/sa/frontend], requestPrincipals: ['*']}
       to:
         - operation: {ports: ['8000'], methods: [GET], paths: ['/api/salary/*']}
-        - operation: {ports: ['8000'], methods: [POST], paths: ['/api/salary/*/adjust']}
+        - operation: {ports: ['8000'], methods: [POST], paths: ['/api/salary/{*}/adjust']}
 ---
 apiVersion: security.istio.io/v1
 kind: AuthorizationPolicy

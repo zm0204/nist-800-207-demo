@@ -2,9 +2,9 @@
 
 以 **SP 800-207 本身**為藍本的 Device Agent/Gateway 展示。Human 用 Passkey/WebAuthn、Device 用 X.509/mTLS；PDP = 分開的 PE + PA，Envoy 是 gateway PEP。
 
-另新增獨立、可選的 **[SP 800-207A Kubernetes / Istio Sidecar Demo](docs/207a-mesh.md)**：STRICT mTLS、ServiceAccount / SPIFFE service identity、default-deny AuthorizationPolicy、frontend / salary / profile 微服務，以及可選的 PE gRPC ext_authz 與自動驗證。原本 Compose、Passkey、Device Identity、PA 與 Dashboard 的啟動及展示流程維持不變。兩個 Demo 可分別執行；mesh 目前驗證服務身分，尚未串接原登入流程或 Multi-Cluster。
+207A 已擴充為 **[Identity-Aware Zero Trust Security Inspector](docs/identity-inspector.md)**：真正 Passkey / Device mTLS / PA Session 交換短效 JWT，串接 Istio SPIFFE Workload Identity、接收端 JWT 驗證、External PE 資源授權、行為隔離與真實執行證據。部署使用獨立 `kind-zta-identity`；原 207 Compose、憑證、Session 與資料不變。Phase 2 / Multi-Location 尚未實作。
 
-**207A 中文實驗台**：完成 mesh 部署後，執行 `.\.venv\Scripts\python.exe scripts/mesh_console.py`，開啟 **http://localhost:18081/**。可點選八個真實服務存取情境、查看回應／操作紀錄、讀取叢集與 SPIFFE 憑證，以及執行完整 23 項驗證。[操作與啟動說明](docs/207a-console.md)。此入口現在是 HTML 操作頁，Kubernetes frontend 的原 JSON API 保留。
+**Windows 一鍵啟動**：在 Repo 執行 `scripts\start_identity.cmd`，開啟 **http://localhost:18081/**。加上 `--verify` 可先跑 Python 與真實 Kubernetes 整合測試。Dashboard 預設 Demo Mode，Inspector Mode 可查看公開憑證、已驗證 Claims、Istio Policy、PE 決策與資源執行紀錄。[完整啟動、五個實驗與安全限制](docs/identity-inspector.md)。舊 workload-only CLI 與歷史證據保留在 [207A 舊版說明](docs/207a-mesh.md)。
 
 **2026-10-20 已在 Windows 本機實際部署 207A + PE external authorization**：base 14/14、external 23/23、Python 69/69、獨立原 207 PE/PA 回歸 9/9。[存取方式、Windows 操作指令與本次 JSON 證據](docs/207a-deployment-2026-10-20.md)。
 
@@ -115,4 +115,3 @@ docker compose -p zta-verification down -v
 這是可執行的教學架構，非NIST認證/完整企業部署。首次enrollment、模擬CDM/threat signals與localhost管理console有意簡化。Control plane在internal Docker network用random service key進行HTTP，production應使用服務mTLS、真正IdP/enrollment/admin授權、credential recovery/rotation、HA、受保護集中式log与real feeds。Docker network隔離不限制擁有Docker daemon/root權限的host管理員；他們屬本示範信任邊界之外。
 
 [NIST SP 800-207 原文](https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-207.pdf) §3.1、§3.2.1、§3.3；Risk weights和threshold是本專案策略，不是標準規定。
-

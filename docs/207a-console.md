@@ -1,5 +1,7 @@
 # 207A 服務存取實驗台
 
+> 歷史版本說明：目前 mesh_console.py 已改為整合式 [Zero Trust Security Inspector](identity-inspector.md)。下列固定情境與操作頁屬於重構前版本；現在請依新文件啟動 kind-zta-identity。
+
 本機入口：**http://localhost:18081/**。這次新增中文操作頁；Kubernetes 內原本的
 frontend、salary、profile、Istio 和 PE 繼續使用原有部署，原 207 Compose Demo 不變。
 

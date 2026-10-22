@@ -1,67 +1,257 @@
 <!doctype html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="color-scheme" content="light">
-  <title>207A · 服務存取實驗台</title>
-  <link rel="icon" href="data:,">
-  <link rel="stylesheet" href="/assets/console.css">
-  <script type="module" src="/assets/console.js"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Zero Trust Security Inspector</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="/assets/console.css">
+<script type="module" src="/assets/console.js">
+</script>
 </head>
 <body>
-  <aside class="rail">
-    <a class="wordmark" href="#top" aria-label="207A 實驗台首頁">207<span>A</span><small>SERVICE IDENTITY LAB</small></a>
-    <div class="rail-rule"></div>
-    <nav aria-label="頁面導覽">
-      <a class="current" href="#experiment"><span>01</span> 存取實驗</a>
-      <a href="#journal"><span>02</span> 操作紀錄</a>
-      <a href="#environment"><span>03</span> 環境與身分</a>
-    </nav>
-    <div class="rail-bottom"><span class="little-square"></span> 本機實驗環境<p>kind-zta-207a<br>Istio Sidecar Mode</p><small>NIST SP 800-207A<br>Workload identity demo</small></div>
-  </aside>
-  <div class="workspace" id="top">
-    <header class="topbar"><span>800-207 / <strong>207A 擴充實作</strong></span><span class="connection" id="connection"><i class="dot"></i>讀取環境中</span></header>
-    <main>
-      <div class="page-heading"><div><p class="eyebrow">實驗工作台 <span>/ LOCAL</span></p><h1>服務存取實驗</h1><p class="intro">換一個服務身分，送出相同請求，看看誰能通過。</p></div><button class="button quiet" id="full-verify">執行完整驗證 <span aria-hidden="true">↗</span></button></div>
-      <p class="page-error" id="page-error" role="alert" hidden></p>
-
-      <section id="experiment" aria-labelledby="route-heading">
-        <div class="section-heading"><h2 id="route-heading"><span class="section-number">01</span> 呼叫路徑</h2><span class="small-muted" id="route-caption">目前選擇的路徑 · 尚未執行</span></div>
-        <div class="route-strip" id="route-strip">
-          <div class="route-node source"><span class="node-kind">發起端</span><strong id="route-source">probe</strong><span class="node-note" id="source-note">測試用服務身分</span></div>
-          <div class="route-link"><span id="first-hop-label">mTLS</span><div></div></div>
-          <div class="route-node" id="route-frontend"><span class="node-kind">服務入口</span><strong>frontend</strong><span class="node-note">轉送到指定資源</span></div>
-          <div class="route-link" id="backend-link"><span>mTLS</span><div></div></div>
-          <div class="route-node destination"><span class="node-kind">受保護資源</span><strong id="route-target">salary</strong><span class="node-note">sidecar 執行存取政策</span></div>
-          <div class="policy-branch"><span class="branch-line"></span><div><span class="node-kind">外部授權</span><strong>PE <span id="pe-label">讀取中</span></strong><span class="node-note">mesh-authz → PE → audit</span></div></div>
-        </div>
-        <div class="policy-bar"><span><i class="dot neutral" id="mtls-dot"></i>mTLS <b id="mtls-mode">—</b></span><span>預設拒絕 <b id="default-deny">—</b></span><span>授權依據 <b>ServiceAccount 身分 + 方法 + 路徑</b></span></div>
-
-        <div class="experiment-panel">
-          <div class="scenario-column"><div class="panel-label">選擇情境 <span>8 項</span></div><div id="scenarios" class="scenario-list" aria-label="測試情境"></div><p class="scenario-footnote">單項測試只發送請求，不修改授權政策。</p></div>
-          <div class="request-column">
-            <div class="request-heading"><div><span class="eyebrow">當前情境</span><h3 id="scenario-title">讀取薪資</h3></div><span class="expectation" id="expectation">預期 200</span></div>
-            <p class="scenario-description" id="scenario-description"></p>
-            <div class="request-line"><span class="http-method" id="request-method">GET</span><code id="request-url">http://frontend:8000/api/salary</code></div>
-            <dl class="request-facts"><div><dt>發起身分</dt><dd id="caller-identity">probe</dd></div><div><dt>目標服務</dt><dd id="target-identity">frontend → salary</dd></div></dl>
-            <details class="headers-detail" id="headers-detail" hidden><summary>本次附加的偽造標頭</summary><pre id="request-headers"></pre></details>
-            <div class="action-row"><button class="button primary" id="run-scenario">執行此情境 <span aria-hidden="true">→</span></button><span id="run-message" class="small-muted" aria-live="polite">請求由叢集內的實際工作負載發出</span></div>
-            <div class="response-area" aria-live="polite"><div class="response-top"><span class="panel-label">執行結果</span><span class="small-muted" id="response-time"></span></div><div id="response-placeholder" class="response-placeholder"><span class="empty-mark">↳</span><div>尚未送出請求<small>執行後，這裡會顯示真正的回應與檢查結果。</small></div></div><div id="response-content" hidden><div class="outcome-line"><strong id="response-code"></strong><div><b id="outcome-title"></b><p id="outcome-description"></p></div><span class="outcome-badge" id="outcome-badge"></span></div><pre class="response-body" id="response-body"></pre><div id="full-checks" hidden></div></div></div>
-          </div>
-        </div>
-      </section>
-
-      <section id="journal" aria-labelledby="journal-heading" class="journal-section">
-        <div class="section-heading"><h2 id="journal-heading"><span class="section-number">02</span> 操作紀錄 <span class="count" id="history-count">0</span></h2><button class="text-button" id="export-history">匯出紀錄 ↓</button></div>
-        <div class="table-wrap"><table class="journal-table"><thead><tr><th>時間</th><th>情境</th><th>來源 → 目的</th><th>實際回應</th><th>檢查</th></tr></thead><tbody id="history"><tr><td colspan="5" class="empty-row">尚無操作。紀錄保留於本次伺服器執行期間。</td></tr></tbody></table></div>
-        <details class="audit-section" id="audit-details"><summary>PE 最近的決策紀錄 <span>來自 Context audit</span></summary><div class="audit-toolbar"><p>以下是獨立讀取的稽核事件，不假定與某一次操作一一對應。</p><button class="text-button" id="refresh-audit">重新讀取 ↻</button></div><p class="small-muted" id="audit-message">展開後讀取。</p><div class="table-wrap"><table><thead><tr><th>時間</th><th>來源 → 目的</th><th>請求</th><th>PE 決策</th><th>原因</th></tr></thead><tbody id="audit-events"></tbody></table></div></details>
-      </section>
-
-      <section id="environment" aria-labelledby="environment-heading" class="environment-section"><div class="section-heading"><h2 id="environment-heading"><span class="section-number">03</span> 環境與身分</h2><button class="text-button" id="refresh-status">更新狀態 ↻</button></div><p class="small-muted environment-note" id="environment-note">即時讀取 Kubernetes；無法連線時不顯示成功狀態。</p><div class="environment-grid"><div><div class="table-wrap"><table><thead><tr><th>工作負載</th><th>就緒</th><th>Sidecar</th><th>ServiceAccount</th></tr></thead><tbody id="workloads"></tbody></table></div></div><div class="identity-panel"><div class="identity-heading"><h3>工作負載憑證</h3><button class="text-button" id="load-certificates">讀取憑證 ↗</button></div><p>從代理的有效公開憑證讀取 SPIFFE 身分與期限；不顯示私鑰。</p><div id="certificate-list" class="certificate-list"><div class="identity-example"><span>身分格式</span><code>spiffe://cluster.local<br>/ns/zta-207a/sa/服務名稱</code></div></div></div></div><details class="policy-details"><summary>已套用的 AuthorizationPolicy</summary><pre id="policy-json">尚未讀取</pre></details></section>
-      <footer><span><b>207A</b> · 服務身分與授權實驗</span><p>僅限本機操作員使用。原 207 的 Passkey／PA 流程獨立保留；本頁不代表已完成使用者登入串接。</p></footer>
-    </main>
-  </div>
-  <dialog id="verify-dialog"><form method="dialog"><p class="eyebrow">完整驗證</p><h2>測試拒絕，也測試恢復。</h2><p>會執行 23 項檢查，包含政策撤銷，以及暫停授權服務、PE 和 audit。期間本機 207A 服務會短暫拒絕請求，測試會嘗試自動恢復。</p><p class="dialog-note">請等目前操作結束再執行；不要在測試途中關閉控制程式。</p><div class="dialog-actions"><button class="button quiet" value="cancel">先不用</button><button class="button primary" id="confirm-verify" value="run">開始完整驗證 →</button></div></form></dialog>
+<aside class="rail">
+<div class="brand">ZT<span> / </span>INSPECTOR</div>
+<p class="rail-label">NIST SP 800-207 + 207A</p>
+<nav>
+<a href="#architecture" class="selected">01　安全架構</a>
+<a href="#experiment">02　身分與存取</a>
+<a href="#observation">03　決策觀測</a>
+</nav>
+<div class="rail-foot">
+<span class="live-dot">
+</span> ISOLATED RESEARCH LAB<p>kind-zta-identity<br>合成企業人事與薪資資料</p>
+<small>Phase 2 / Multi-Location<br>
+<b>NOT_IMPLEMENTED</b>
+</small>
+</div>
+</aside>
+<div class="workspace">
+<header>
+<div>
+<span class="live-dot" id="status-dot">
+</span>
+<span id="connection">正在讀取隔離環境</span>
+</div>
+<div class="mode-switch" role="group" aria-label="顯示模式">
+<button id="demo-mode" class="active">Demo Mode</button>
+<button id="inspector-mode">Inspector Mode</button>
+</div>
+</header>
+<main>
+<div class="title-row">
+<div>
+<p class="eyebrow">IDENTITY-AWARE SECURITY / LIVE EVIDENCE</p>
+<h1>每一次存取，都需要證據。</h1>
+<p class="lead">同時驗證使用者與服務身分，觀察資源授權如何隨風險改變。</p>
+</div>
+<div class="lab-stamp">研究原型<span>01 / IDENTITY TIER</span>
+</div>
+</div>
+<div id="error" class="notice error" role="alert" hidden>
+</div>
+<section id="architecture" class="card architecture">
+<div class="section-title">
+<h2>
+<span>01</span> 真正的請求路徑</h2>
+<span class="quiet">接收端 Sidecar 為服務信任邊界</span>
+</div>
+<div class="flow">
+<article>
+<label>HUMAN IDENTITY</label>
+<strong id="human-label">尚未登入</strong>
+<p>Passkey · Device X.509<br>PA Session → RS256 JWT</p>
+<small id="jwt-expiry">短效 JWT 最長 120 秒</small>
+</article>
+<div class="arrow">→</div>
+<article>
+<label>DEVICE INGRESS</label>
+<strong>Envoy Gateway</strong>
+<p>Device mTLS<br>驗證裝置憑證</p>
+<small>獨立測試 PKI</small>
+</article>
+<div class="arrow">→</div>
+<article>
+<label>APPLICATION</label>
+<strong>Frontend</strong>
+<p>接收端 JWT + Native Policy<br>轉送同一顆使用者 JWT</p>
+<small>獨立 SPIFFE 身分</small>
+</article>
+<div class="arrow">→</div>
+<article class="protected">
+<label>PROTECTED RESOURCE</label>
+<strong>Salary / Profile</strong>
+<p>接收端 JWT + CUSTOM<br>Native ALLOW + 資源授權</p>
+<small>真實執行紀錄</small>
+</article>
+</div>
+<div class="control-plane">
+<b>CONTROL PLANE</b>
+<span>Identity / PA <i>簽發與撤銷</i>
+</span>
+<span>External PE <i>Scope · Ownership · Risk</i>
+</span>
+<span>Monitoring <i>使用者頻率 → Behavioral Quarantine</i>
+</span>
+</div>
+<p class="boundary-note">Frontend Pod 完全遭入侵時，假設其 Sidecar 也受控制。主要防線是 Salary / Profile 的接收端 Sidecar 與獨立 PE。</p>
+</section>
+<div class="work-grid" id="experiment">
+<section class="card identity-card">
+<div class="section-title">
+<h2>
+<span>02</span> 身分與憑證</h2>
+<span class="pill neutral" id="auth-state">NO SESSION</span>
+</div>
+<label class="field-label" for="subject">登入帳號</label>
+<select id="subject">
+<option value="alice">Alice · 一般員工</option>
+<option value="bob">Bob · 指定範圍 HR</option>
+</select>
+<div class="button-row">
+<button id="register" class="secondary">註冊 Passkey</button>
+<button id="login" class="primary">Passkey 登入</button>
+</div>
+<p class="help">Bob 註冊由本機管理者發出單次邀請。Role 由伺服器配置；瀏覽器不能自行宣告。</p>
+<div class="identity-summary">
+<div>
+<span>USER</span>
+<b id="user-value">NOT_OBSERVED</b>
+</div>
+<div>
+<span>DEVICE</span>
+<b id="device-value">NOT_OBSERVED</b>
+</div>
+<div>
+<span>SESSION</span>
+<b id="session-value">尚未建立</b>
+</div>
+</div>
+<button id="step-up" class="secondary full">Passkey Step-Up · 薪資調整權限</button>
+<p class="help">重新驗證可提升認證新鮮度；無法解除行為隔離。調整 Scope 最長 30 秒。</p>
+<button id="recover" class="secondary full">管理者操作 · 解除所選帳號的行為隔離</button>
+</section>
+<section class="card experiment-card">
+<div class="section-title">
+<h2>
+<span>03</span> 送出一筆真實請求</h2>
+<span class="quiet">不產生模擬安全結果</span>
+</div>
+<div class="fields">
+<div>
+<label class="field-label" for="resource">資源</label>
+<select id="resource">
+<option value="salary">Salary · 薪資</option>
+<option value="profile">Profile · 個人資料</option>
+</select>
+</div>
+<div>
+<label class="field-label" for="owner">資源擁有者</label>
+<select id="owner">
+<option value="alice">Alice</option>
+<option value="bob">Bob</option>
+<option value="carol">Carol · HR 範圍外</option>
+</select>
+</div>
+</div>
+<label class="field-label" for="attack">實驗控制</label>
+<select id="attack">
+<option value="normal">一般存取 · 觀察擁有權授權</option>
+<option value="intruder">Intruder 持有同一顆合法 JWT，直接呼叫後端</option>
+<option value="forged-headers">Intruder 偽造使用者 / 角色 / XFCC</option>
+<option value="invalid-jwt">無效 JWT · 真實簽章拒絕</option>
+<option value="missing-jwt">缺少 JWT · 驗證必須登入</option>
+<option value="hr-burst">HR 並行讀取 8 次 · 觸發隔離</option>
+<option value="pe-outage">PE 故障注入 · 自動恢復並查詢執行紀錄</option>
+<option value="direct-frontend">Frontend Pod 直接呼叫後端 · 仍需資源授權</option>
+<option value="plaintext">Plaintext Pod · 無 mTLS</option>
+</select>
+<div class="request-preview">
+<code id="preview">GET /api/salary/alice</code>
+<span id="scope-label">需要 salary:read</span>
+</div>
+<div class="button-row">
+<button id="run" class="primary run">發送請求 <span>↗</span>
+</button>
+<button id="adjust" class="secondary">薪資調整為 60,000</button>
+</div>
+<p class="help">HR 教學政策：10 秒內最多 6 次授權請求；之後持續隔離，需管理者處理。這不是 NIST 指定數值。故障注入僅作用於隔離叢集。</p>
+</section>
+</div>
+<section id="observation" class="card observation">
+<div class="section-title">
+<h2>
+<span>04</span> 安全決策觀測</h2>
+<span class="pill neutral" id="http-status">等待請求</span>
+</div>
+<div id="empty" class="empty">
+<div class="empty-mark">◎</div>
+<h3>以真實請求建立第一份證據</h3>
+<p>先用 Passkey 登入，再選擇資源。未觀測的階段保持未知。</p>
+</div>
+<div id="result" hidden>
+<div class="attempt">
+<span>ATTEMPT ID</span>
+<code id="attempt-id">
+</code>
+</div>
+<div id="stages" class="stages">
+</div>
+<div class="response-grid">
+<div>
+<label class="field-label">最終 HTTP / Resource Response</label>
+<pre id="response">
+</pre>
+</div>
+<div>
+<label class="field-label">External PE / Authorization Reason</label>
+<pre id="decision">
+</pre>
+</div>
+</div>
+<p class="help" id="execution-note">
+</p>
+</div>
+</section>
+<section class="card advanced" id="inspector-panel" hidden>
+<div class="section-title">
+<h2>
+<span>05</span> Inspector / 原始證據</h2>
+<button id="certificates" class="secondary">讀取公開憑證</button>
+</div>
+<div class="inspector-grid">
+<details open>
+<summary>已驗證 JWT Claims · 來源為 PE Audit</summary>
+<pre id="claims">NOT_OBSERVED</pre>
+</details>
+<details>
+<summary>Envoy / PE / Resource Evidence</summary>
+<pre id="evidence">NOT_OBSERVED</pre>
+</details>
+<details>
+<summary>已部署 Istio Policy</summary>
+<pre id="policies">NOT_OBSERVED</pre>
+</details>
+<details>
+<summary>公開 Workload 憑證</summary>
+<pre id="public-certs">NOT_OBSERVED</pre>
+</details>
+</div>
+<div class="legend">
+<b>證據狀態</b>
+<span>VERIFIED_PASS</span>
+<span>VERIFIED_BLOCK</span>
+<span>SKIPPED_BY_POLICY</span>
+<span>NOT_REACHED</span>
+<span>NOT_OBSERVED / UNKNOWN</span>
+</div>
+<p class="help">沒有 Log 不代表未執行。CUSTOM → DENY → ALLOW；PE 允許後仍可能被 Native Policy 拒絕。TLS 資訊只顯示代理實際觀測值。</p>
+</section>
+<footer>
+<span>ZERO TRUST SECURITY INSPECTOR</span>
+<span>單一 Cluster · Synthetic Data · Phase 2 尚未實作</span>
+</footer>
+</main>
+</div>
 </body>
 </html>

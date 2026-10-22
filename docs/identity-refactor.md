@@ -11,15 +11,15 @@ execution. Docker was initially stopped. No live cluster validation yet.
 
 ## Implementation order
 
-- [ ] Stage 1: `app/user_tokens.py`, PA exchange, additive identity migration;
+- [x] Stage 1: `app/user_tokens.py`, PA exchange, additive identity migration;
   `app/mesh_identity.py`, frontend and resource JWT validation; mesh policies.
   Verify real WebAuthn → introspection → device-bound session → RS256 JWT;
   missing/expired/forged/wrong audience tokens and ownership denial.
-- [ ] Stage 2: separate dynamic resource policy and persistent subject/device
+- [x] Stage 2: separate dynamic resource policy and persistent subject/device
   context; real ext_authz → PE request. Count by subject, persist quarantine,
   require fresh WebAuthn for short salary-write scopes, audit before ALLOW.
   Verify dependency failure never executes resource; step-up never clears risk.
-- [ ] Stage 3: trusted event source and attempt/request correlation;
+- [x] Stage 3: trusted event source and attempt/request correlation;
   `console/` Security Inspector with Demo/Inspector views. Only producer evidence
   establishes stage outcomes. Missing logs remain NOT_OBSERVED.
 - [ ] Stage 4: isolated startup, real integration runner, regression suite,
@@ -40,3 +40,5 @@ inference. Only test authenticator code generates software credentials.
 ## Verification ledger
 
 Stage 0 complete: baseline 86 passed. Original data untouched.
+
+Stage 1–3 implemented. Python suite: 127 passed. Real identity mesh: 23 integration checks passed, including HR quarantine, genuine signed WebAuthn step-up, PE/adapter/audit outages, zero execution queries, restoration, public certificates and CUSTOM coverage. Original 207 isolated Compose regression: 9 groups passed. Independent review: no confirmed P1/P2 findings. Stage 4 cold-start/launcher and final evidence refresh pending; hardware authenticator interaction remains manual acceptance. Phase 2 deferred.
