@@ -34,7 +34,9 @@ jobs:
         if: always()
         with:
           name: identity-verification-results
-          path: artifacts/identity-e2e.json
+          path: |
+            artifacts/identity-e2e.json
+            artifacts/port-forwards/*.log
           if-no-files-found: ignore
       # Hosted runner lifecycle reclaims this isolated environment. No local or
       # user-owned cluster / volume deletion command is part of this workflow.

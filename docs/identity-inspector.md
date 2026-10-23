@@ -2,6 +2,8 @@
 
 這是單一 kind Cluster 的企業人事／薪資研究原型。資料與帳號配置為 Synthetic Data；Passkey 簽章驗證、裝置 mTLS、JWT、Istio Workload Identity、資源授權與故障阻擋均由真實元件執行。Phase 2 / Multi-Location 未實作。
 
+[2026-10-23 CI 修復、Windows Hello 人工驗收與冷啟動檢查](ci-transport-2026-10-23.md)
+
 ## 啟動
 
 前提：Docker Desktop Linux containers、Python 3.12、kubectl、kind v0.33.0、istioctl 1.31.1。現有工作區的 `.tools` 會自動優先使用；其他環境可將工具加入 PATH。Repo 需有 `.venv`；初次建立可用 `py -3.12 -m venv .venv`。
@@ -115,7 +117,7 @@ Envoy JWT 驗證與 Istio AuthorizationPolicy 的 CUSTOM／DENY／ALLOW 是不�
 .\.venv\Scripts\python.exe scripts/identity_deploy.py status
 ```
 
-本機 Python 回歸套件已實測 **139 項通過**。Windows `.cmd --no-browser` 已實際重複部署並成功啟動；尚未進行整台 Windows 重新開機後的冷啟動驗收。新增 GitHub Actions workflow 已提供，尚未推送或在遠端執行，不能宣稱遠端 CI 通過。
+本機 Python 回歸套件已實測 **139 項通過**。Windows `.cmd --no-browser` 已實際重複部署並成功啟動；尚未進行整台 Windows 重新開機後的冷啟動驗收。2026-10-22 初次交付時遠端 CI 尚未執行；後續 Linux CI 修復與驗收狀態見上述 2026-10-23 記錄，不能將本機結果當作遠端 PASS。
 
 **26 組真實 K8s 整合驗證已通過**；固定證據快照見 [2026-10-22 整合報告](evidence/2026-10-22/identity-e2e.json)。包含 11 份實際 Workload 公開憑證。
 

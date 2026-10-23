@@ -47,7 +47,7 @@ CUSTOM executes before DENY/ALLOW, and covers all backend application-port traff
 Attempt IDs are correlation labels, never authorization proof. No absence-of-log
 inference. Only test authenticator code generates software credentials.
 
-## Verification ledger
+## Verification ledger — historical snapshot 2026-10-22
 
 Stage 0 complete: baseline 86 passed. Original data untouched.
 
@@ -76,3 +76,5 @@ Manual acceptance remains: physical Windows Hello / hardware security key, and a
 full Windows reboot cold-start. New GitHub Actions workflow is supplied but has
 not been pushed or run remotely. No HA / production-load / rotation soak test.
 Phase 2 / multi-location remains explicitly NOT_IMPLEMENTED. No merge or push.
+
+2026-10-23 follow-up: [CI transport repair and current manual acceptance checklist](ci-transport-2026-10-23.md).

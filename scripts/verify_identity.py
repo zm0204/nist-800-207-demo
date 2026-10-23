@@ -21,7 +21,7 @@ from cryptography.hazmat.primitives import serialization
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from tests.authenticator import Authenticator, b64
-from scripts.security_inspector import SecurityOperator, Experiment, forwards
+from scripts.security_inspector import SecurityOperator, Experiment, forwards, gateway_probe_forward
 from scripts.identity_deploy import STATE, k
 
 
@@ -29,9 +29,9 @@ def certificate_required(error):
     return isinstance(error, ssl.SSLError) and getattr(error, 'reason', '') == 'TLSV13_ALERT_CERTIFICATE_REQUIRED'
 
 
-def missing_certificate_observation(tls):
+def missing_certificate_observation(tls, port=18443):
     try:
-        with socket.create_connection(('127.0.0.1', 18443), timeout=5) as tcp:
+        with socket.create_connection(('127.0.0.1', port), timeout=5) as tcp:
             with tls.wrap_socket(tcp, server_hostname='localhost') as connection:
                 connection.sendall(b'GET /health HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n')
                 connection.recv(1024)
@@ -156,28 +156,24 @@ def run():
         return evidence
     users = []
     try:
-        with forwards():
+        with forwards() as ready:
             # Explicit operator test setup, separately audited; login never clears risk.
             operator.control('pe', '/resource-state/bob', 'PUT', {})
             alice, bob = User('alice', operator), User('bob', operator)
             users = [alice, bob]
             for with_cert in (False, True):
-                deadline = time.monotonic()+10
-                while True:
-                    try:
-                        if operator.agent('/health', None, '', method='GET').status_code == 404:
-                            break
-                    except httpx.HTTPError:
-                        pass
-                    if time.monotonic() >= deadline:
-                        raise RuntimeError('Device TLS forward did not recover')
-                    time.sleep(.25)
+                ready()
                 tls = ssl.create_default_context(cafile=str(STATE/'certs/service-ca.crt'))
                 if with_cert:
                     tls.load_cert_chain(STATE/'certs/device-b.crt', STATE/'certs/device-b.key')
                 name = 'Different device plus forged XFCC cannot create Session' if with_cert else 'Device gateway rejects absent client certificate'
                 if not with_cert:
-                    observed = missing_certificate_observation(tls)
+                    with gateway_probe_forward() as isolated:
+                        observed = missing_certificate_observation(tls, isolated.port)
+                        observed['port_forward_pid'] = isolated.process.pid
+                    assert isolated.process.poll() is not None
+                    observed['transport'] = 'dedicated tunnel reaped before next request'
+                    ready()
                 else:
                     with httpx.Client(verify=tls, timeout=5, trust_env=False) as c:
                         r = c.post('https://localhost:18443/session', json={'path': '/api/salary', 'method': 'GET'},

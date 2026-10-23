@@ -1,0 +1,5 @@
+Forwarding from 0.0.0.0:18444 -> 8443
+Handling connection for 18444
+Handling connection for 18444
+E1023 04:11:24.079467  967550 portforward.go:424] "Unhandled Error" err="an error occurred forwarding 18444 -> 8443: error forwarding port 8443 to pod 02685399f128579d39ef35b26bad595f21bff9b2609e770629872812d1fff66c, uid : failed to execute portforward in network namespace \"/var/run/netns/cni-e46c21b8-759e-8ca9-1423-0e0d86e5cd17\": readfrom tcp4 127.0.0.1:51218->127.0.0.1:8443: write tcp4 127.0.0.1:51218->127.0.0.1:8443: write: broken pipe"
+error: lost connection to pod

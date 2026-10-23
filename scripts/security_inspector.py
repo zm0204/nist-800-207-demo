@@ -44,67 +44,91 @@ print(r.text)
 """
 
 
+def gateway_ready(port):
+    tls = ssl.create_default_context(cafile=str(STATE/'certs/service-ca.crt'))
+    tls.load_cert_chain(STATE/'certs/device-a.crt', STATE/'certs/device-a.key')
+    with httpx.Client(verify=tls, timeout=1, trust_env=False) as client:
+        return client.get(f'https://localhost:{port}/health').status_code == 404
+
+
+def identity_ready(port):
+    return httpx.get(f'http://127.0.0.1:{port}/health', timeout=1, trust_env=False).status_code == 200
+
+
+def forward_process(service, local, remote):
+    from scripts.port_forward import PortForward
+    command = [tool('kubectl'), '--kubeconfig', str(KUBECONFIG), '--context', CONTEXT,
+        '-n', NS, 'port-forward', '--address=127.0.0.1', 'service/'+service, f'{local}:{remote}']
+    return PortForward(command, log_path=ROOT/'artifacts/port-forwards'/f'{service}-{uuid4()}.log')
+
+
+@contextmanager
+def gateway_probe_forward():
+    # A TLS rejection may kill kubectl asynchronously on Linux. Never share this
+    # deliberately failing transport with login/session/application requests.
+    with forward_process('device-gateway', '', 8443) as forward:
+        forward.wait_ready(gateway_ready)
+        yield forward
+    # Context exit reaps this exact owned process before any subsequent request.
+
+
 @contextmanager
 def forwards():
-    # Reuse a running Inspector's forwards only after verifying our isolated
-    # gateway's TLS certificate with its dedicated CA and device credential.
+    def wait_ready(timeout=20):
+        deadline = time.monotonic()+timeout
+        last = 'Identity or verified device TLS unavailable'
+        while True:
+            try:
+                if identity_ready(18082) and gateway_ready(18443):
+                    return
+            except (httpx.TransportError, OSError) as error:
+                last = type(error).__name__
+            remaining = deadline-time.monotonic()
+            if remaining <= 0:
+                raise TimeoutError('Identity and device TLS readiness timed out: '+last)
+            # Retry only readiness, never an application POST or security test.
+            threading.Event().wait(min(.1, remaining))
     try:
-        tls = ssl.create_default_context(cafile=str(STATE/'certs/service-ca.crt'))
-        tls.load_cert_chain(STATE/'certs/device-a.crt', STATE/'certs/device-a.key')
-        with httpx.Client(verify=tls, timeout=1, trust_env=False) as client:
-            gateway_ready = client.get('https://localhost:18443/health').status_code == 404
-        identity_ready = httpx.get('http://127.0.0.1:18082/health', timeout=1, trust_env=False).status_code == 200
-    except (httpx.HTTPError, OSError):
-        gateway_ready = identity_ready = False
-    if gateway_ready and identity_ready:
-        yield
+        reusable = identity_ready(18082) and gateway_ready(18443)
+    except (httpx.TransportError, OSError):
+        reusable = False
+    if reusable:
+        yield wait_ready
         return
     processes = []
     stop = threading.Event()
     watcher = None
-    options = {'creationflags': subprocess.CREATE_NO_WINDOW} if os.name == 'nt' else {}
-    specifications = [('identity', 18082, 8000), ('device-gateway', 18443, 8443)]
+    specifications = [('identity', 18082, 8000, identity_ready),
+                      ('device-gateway', 18443, 8443, gateway_ready)]
     def start_forward(specification):
-        service, local, remote = specification
-        return subprocess.Popen([tool('kubectl'), '--kubeconfig', str(KUBECONFIG), '--context', CONTEXT,
-            '-n', NS, 'port-forward', '--address=127.0.0.1', 'service/'+service, f'{local}:{remote}'],
-            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, **options)
-    def supervise():
-        while not stop.wait(.25):
-            for index, process in enumerate(processes):
-                if process.poll() is not None:
-                    processes[index] = start_forward(specifications[index])
+        service, local, remote, probe = specification
+        if stop.is_set():
+            raise InterruptedError('Port-forward startup cancelled')
+        forward = forward_process(service, local, remote)
+        forward.__enter__()
+        try:
+            forward.wait_ready(probe, cancelled=stop)
+        except BaseException:
+            forward.__exit__(*sys.exc_info())
+            raise
+        return forward
     try:
         for specification in specifications:
             processes.append(start_forward(specification))
-        deadline = time.monotonic()+20
-        while time.monotonic() < deadline:
-            if any(p.poll() is not None for p in processes):
-                raise RuntimeError('Port forward failed; check 18082 / 18443 and cluster readiness')
-            try:
-                if httpx.get('http://127.0.0.1:18082/health', timeout=1, trust_env=False).status_code == 200:
-                    break
-            except httpx.HTTPError:
-                pass
-            time.sleep(.25)
-        else:
-            raise RuntimeError('Identity port forward did not become ready')
-        # Windows kubectl can terminate its entire TLS forward after a rejected
-        # handshake or Pod replacement. Restore the tunnel; never restart Pods.
-        watcher = threading.Thread(target=supervise, daemon=True)
+        wait_ready()
+        from scripts.port_forward import supervise_forwards
+        watcher = threading.Thread(target=supervise_forwards,
+            args=(processes, lambda index: start_forward(specifications[index]), stop), daemon=True)
         watcher.start()
-        yield
+        yield wait_ready
     finally:
         stop.set()
         if watcher:
-            watcher.join(timeout=2)
-        for p in processes:
-            p.terminate()
-        for p in processes:
-            try:
-                p.wait(timeout=5)
-            except subprocess.TimeoutExpired:
-                p.kill()
+            # Cancellation interrupts readiness; its HTTP probe is bounded to 1s.
+            # Join fully before closing children; no replacement may escape ownership.
+            watcher.join()
+        for forward in processes:
+            forward.__exit__(None, None, None)
 
 
 class SecurityOperator:
