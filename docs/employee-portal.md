@@ -60,6 +60,8 @@ Observer 每兩秒輪詢記憶體快取，明細只在 Attempt 變更後取得�
 
 ## 證據規則
 
+Observer 將「Passkey 登入（先前完成）」與本次 Identity introspection／PA Session／JWT 交換分開；只有敏感修改才另外呈現 Step-Up。資料路徑為 Gateway → Frontend → 接收端 Envoy Sidecar → Salary／Profile App；CUSTOM、Native DENY／ALLOW 均在 Sidecar 內，External PE 是 ext_authz 呼叫及決策回程分支。PE ALLOW 沒有接收端回應佐證時，CUSTOM 回程仍維持未觀測。點選節點可查看來源；同一人的新 Attempt 抵達時，舊證據面板會收起，另一人的圖仍保留。
+
 - 綠線：該段有元件正向證據。既有 Session 的當次有效性只能由成功 PA exchange 的重新驗證建立，不能假造一次未執行的 `/session` 200。
 - 紅線：該元件已觀測的拒絕。PA exchange 拒絕顯示在交換階段，不會捏造 PE DENY。
 - 灰線：節點文字分別顯示「未到達」「未觀測」或「未知」；沒有來源不推論成成功／失敗。
