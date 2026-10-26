@@ -4,6 +4,8 @@
 
 ## 本次可開啟的獨立環境
 
+**真人首次註冊／登入**：[Chrome Google Password Manager 操作步驟](passkey-human-setup.md)。可直接雙擊 `scripts/register_portal_passkey.cmd` 開啟受權註冊頁，不需要 USB Security Key。
+
 - 員工頁：http://localhost:18091/portal
 - 監控頁：http://localhost:18091/observer
 - 說明頁：http://localhost:18091/about

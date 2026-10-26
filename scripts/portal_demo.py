@@ -25,6 +25,8 @@ def configure():
         for entry in identity['spec']['template']['spec']['containers'][0]['env']:
             if entry['name'] == 'WEBAUTHN_ORIGIN':
                 entry['value'] = 'http://localhost:18091'
+        identity['spec']['template']['spec']['containers'][0]['env'].append(
+            {'name':'PASSKEY_ACCOUNT_NAMESPACE','value':'portal-p0'})
         return docs
     deployment.render = render
     os.environ['ZTA_IDENTITY_PORT'] = '19082'

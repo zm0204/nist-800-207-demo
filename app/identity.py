@@ -10,7 +10,8 @@ from webauthn import (generate_registration_options, generate_authentication_opt
                       verify_registration_response, verify_authentication_response)
 from webauthn.helpers import options_to_json
 from webauthn.helpers.structs import (AuthenticatorSelectionCriteria, UserVerificationRequirement,
-                                     PublicKeyCredentialDescriptor)
+                                     PublicKeyCredentialDescriptor, ResidentKeyRequirement,
+                                     AuthenticatorTransport, PublicKeyCredentialHint)
 from app.common import db, protected
 
 app=FastAPI(title='Passwordless Identity / WebAuthn')
@@ -31,7 +32,17 @@ def initialize():
         c.execute('CREATE TABLE IF NOT EXISTS invitation (hash TEXT PRIMARY KEY, subject TEXT, expires REAL)')
         if 'allow_add' not in {r['name'] for r in c.execute('PRAGMA table_info(challenge)')}:
             c.execute('ALTER TABLE challenge ADD COLUMN allow_add INTEGER NOT NULL DEFAULT 0')
+        if 'transports' not in {r['name'] for r in c.execute('PRAGMA table_info(credential)')}:
+            c.execute("ALTER TABLE credential ADD COLUMN transports TEXT NOT NULL DEFAULT '[]'")
 initialize()
+
+
+def descriptor(row):
+    from webauthn import base64url_to_bytes
+    # Browser routing metadata only; never identity/authorization evidence.
+    transports = [AuthenticatorTransport(t) for t in json.loads(row['transports'])
+                  if t in {v.value for v in AuthenticatorTransport}]
+    return PublicKeyCredentialDescriptor(id=base64url_to_bytes(row['id']), transports=transports or None)
 
 def save_challenge(kind,options,subject='alice',allow_add=False):
     ceremony=secrets.token_urlsafe(32)
@@ -89,10 +100,20 @@ def register_options(body: Enrollment = Enrollment()):
             subject = row['subject']
             c.execute('DELETE FROM invitation WHERE hash=?', (hashed,))
         if not body.invitation and c.execute('SELECT COUNT(*) FROM credential WHERE subject=?', (subject,)).fetchone()[0]:
-            raise HTTPException(409,'alice already enrolled; use login or explicitly reset demo storage')
+            raise HTTPException(409,'alice already enrolled; use an administrator invitation to add a passkey')
+        existing = c.execute('SELECT id,transports FROM credential WHERE subject=?', (subject,)).fetchall()
+    namespace = os.environ.get('PASSKEY_ACCOUNT_NAMESPACE', '')
+    # Separate localhost applications must not replace one another's resident
+    # credential in a password manager by reusing the same RP + user handle.
+    handle = hashlib.sha256((namespace+'\0'+subject).encode()).digest() if namespace else subject.encode()
     return save_challenge('register',generate_registration_options(
-        rp_id=RP,rp_name='800-207 Demo',user_id=subject.encode(),user_name=subject,
-        authenticator_selection=AuthenticatorSelectionCriteria(user_verification=UserVerificationRequirement.REQUIRED)), subject, bool(body.invitation))
+        rp_id=RP,rp_name='員工服務' if namespace else '800-207 Demo',user_id=handle,
+        user_name=subject+'@'+namespace if namespace else subject,
+        exclude_credentials=[descriptor(row) for row in existing],
+        hints=[PublicKeyCredentialHint.CLIENT_DEVICE],
+        authenticator_selection=AuthenticatorSelectionCriteria(
+            resident_key=ResidentKeyRequirement.REQUIRED, require_resident_key=True,
+            user_verification=UserVerificationRequirement.REQUIRED)), subject, bool(body.invitation))
 
 @app.post('/register/verify')
 def register_verify(body:Verification):
@@ -106,18 +127,18 @@ def register_verify(body:Verification):
         c.execute('BEGIN IMMEDIATE')
         if not allow_add and c.execute('SELECT COUNT(*) FROM credential WHERE subject=?',(subject,)).fetchone()[0]:
             raise HTTPException(409,'subject already enrolled')
-        c.execute('INSERT INTO credential(id,public_key,counter,subject) VALUES (?,?,?,?)',
-                  (body.credential['id'],v.credential_public_key,v.sign_count,subject))
+        transports = body.credential.get('response', {}).get('transports') or []
+        c.execute('INSERT INTO credential(id,public_key,counter,subject,transports) VALUES (?,?,?,?,?)',
+                  (body.credential['id'],v.credential_public_key,v.sign_count,subject,json.dumps(transports)))
     return {'subject':subject,'registered':True}
 
 @app.post('/login/options')
 def login_options(body: Subject = Subject()):
-    from webauthn import base64url_to_bytes
-    with db('identity') as c: rows=c.execute('SELECT id FROM credential WHERE subject=?',(body.subject,)).fetchall()
+    with db('identity') as c: rows=c.execute('SELECT id,transports FROM credential WHERE subject=?',(body.subject,)).fetchall()
     if not rows: raise HTTPException(409,'register a passkey first')
     return save_challenge('login',generate_authentication_options(rp_id=RP,
         user_verification=UserVerificationRequirement.REQUIRED,
-        allow_credentials=[PublicKeyCredentialDescriptor(id=base64url_to_bytes(r['id'])) for r in rows]), body.subject)
+        allow_credentials=[descriptor(row) for row in rows]), body.subject)
 
 @app.post('/login/verify')
 def login_verify(body:Verification):

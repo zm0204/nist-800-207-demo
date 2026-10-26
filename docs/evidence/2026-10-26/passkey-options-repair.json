@@ -1,0 +1,44 @@
+{
+  "credentials_keys_counters_unchanged": true,
+  "token_rows_unchanged": true,
+  "rp": "localhost",
+  "origin": "http://localhost:18091",
+  "namespace": "portal-p0",
+  "accounts": {
+    "alice": {
+      "registration_selection": {
+        "residentKey": "required",
+        "requireResidentKey": true,
+        "userVerification": "required"
+      },
+      "hints": [
+        "client-device"
+      ],
+      "user_name": "alice@portal-p0",
+      "exclude_count": 1,
+      "login_allow_count": 1,
+      "login_uv": "required",
+      "known_transports": [
+        null
+      ]
+    },
+    "bob": {
+      "registration_selection": {
+        "residentKey": "required",
+        "requireResidentKey": true,
+        "userVerification": "required"
+      },
+      "hints": [
+        "client-device"
+      ],
+      "user_name": "bob@portal-p0",
+      "exclude_count": 1,
+      "login_allow_count": 1,
+      "login_uv": "required",
+      "known_transports": [
+        null
+      ]
+    }
+  },
+  "human_registration": "pending user action; no additional test credential created"
+}

@@ -21,6 +21,7 @@ def test_additive_migration_preserves_legacy_credentials_and_tokens(tmp_path, mo
     with sqlite3.connect(path) as c:
         row = c.execute('SELECT id,public_key,counter,subject FROM credential').fetchone()
         assert row == ('existing-id', b'existing-key', 42, 'alice')
+        assert c.execute('SELECT transports FROM credential').fetchone()[0] == '[]'
     result = identity.introspect(identity.Token(token='old-token'))
     assert result['valid'] and result['subject'] == 'alice'
     assert result['auth_time'] == 0  # Legacy login remains valid; exchange needs a fresh login.
