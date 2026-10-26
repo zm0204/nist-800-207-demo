@@ -9,7 +9,7 @@ from uuid import uuid4
 import httpx
 from fastapi import HTTPException, Request
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class Access(BaseModel):
@@ -27,6 +27,16 @@ class Verification(BaseModel):
     model_config = ConfigDict(extra='forbid')
     ceremony: str
     credential: dict
+
+
+class Empty(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+
+
+class Adjustment(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    owner: Literal['alice', 'bob', 'carol']
+    amount: int = Field(strict=True, ge=0, le=10000000)
 
 
 def public_attempt(result, subject):
@@ -167,7 +177,46 @@ def attach_portal(app, operator, submit, get_job):
         response.delete_cookie('employee_session')
         return response
 
-    def execute(value, body, attempt, request_id):
+    @app.post('/api/portal/step-up/options')
+    def step_up_options(body: Empty, request: Request):
+        sid, value = current(request)
+        csrf(request, value)
+        r = identity('login/options', {'subject': value['subject']})
+        response = JSONResponse(r.json(), r.status_code)
+        if r.status_code == 200:
+            nonce = secrets.token_urlsafe(32)
+            with lock:
+                for key in list(pending):
+                    if pending[key]['expires'] < time.time():
+                        pending.pop(key)
+                if len(pending) >= 100:
+                    raise HTTPException(429, 'too_many_login_attempts')
+                pending[nonce] = {'ceremony': r.json()['ceremony'], 'sid': sid,
+                                  'expires': time.time()+120, 'purpose': 'step-up'}
+            response.set_cookie('employee_step_up', nonce, httponly=True, samesite='strict', max_age=120)
+        return response
+
+    @app.post('/api/portal/step-up/verify')
+    def step_up_verify(body: Verification, request: Request):
+        sid, value = current(request)
+        csrf(request, value)
+        with lock:
+            expected = pending.pop(request.cookies.get('employee_step_up', ''), None)
+        if not expected or expected.get('sid') != sid or expected.get('purpose') != 'step-up' or expected['expires'] < time.time() or expected['ceremony'] != body.ceremony:
+            raise HTTPException(400, 'step_up_ceremony_required')
+        r = identity('login/verify', body.model_dump())
+        if r.status_code != 200:
+            return JSONResponse(r.json(), r.status_code)
+        proof = operator.control('identity', '/introspect', 'POST', {'token': r.json()['token']})
+        if not proof.get('valid') or proof.get('subject') != value['subject']:
+            raise HTTPException(401, 'verified_subject_required')
+        with lock:
+            value['step_up'] = r.json()['token']
+        response = JSONResponse({'verified': True})
+        response.delete_cookie('employee_step_up')
+        return response
+
+    def execute(value, body, attempt, request_id, *, operation='read', amount=0):
         from app.inspection import inspect_attempt
         from scripts.security_inspector import Experiment
         phase = 'identity'
@@ -188,8 +237,16 @@ def attach_portal(app, operator, submit, get_job):
             session_stage = {'component': phase, 'status': 'NOT_OBSERVED' if cached else 'VERIFIED_PASS',
                 'evidence': [] if cached else [{'source': 'Device mTLS gateway / PA session response', 'status': 200}]}
             preliminary.append(session_stage)
+            if operation == 'adjust':
+                phase = 'step_up'
+                with lock:
+                    step_up = value.pop('step_up', None)
+                if not step_up:
+                    raise HTTPException(401, 'step_up_required')
+                preliminary.append({'component': phase, 'status': 'VERIFIED_PASS', 'evidence': [{'source': 'Identity verified an additional same-subject WebAuthn ceremony'}]})
             phase = 'token_exchange'
-            r = operator.agent('/token/exchange', {'scope': None}, value['pa'][body.resource])
+            exchange_body = {'scope': 'salary:write', 'step_up_token': step_up} if operation == 'adjust' else {'scope': None}
+            r = operator.agent('/token/exchange', exchange_body, value['pa'][body.resource])
             if r.status_code != 200:
                 value['pa'].pop(body.resource, None)
                 raise HTTPException(r.status_code, r.json().get('detail', 'token_exchange_rejected'))
@@ -197,7 +254,8 @@ def attach_portal(app, operator, submit, get_job):
                 session_stage.update(status='VERIFIED_PASS', evidence=[{'source': 'PA exchange revalidated the cached device-bound Session', 'status': 200}])
             preliminary.append({'component': phase, 'status': 'VERIFIED_PASS', 'evidence': [{'source': 'Device mTLS gateway / PA exchange response', 'status': 200}]})
             phase = 'access'
-            result = operator.perform(Experiment(token=r.json()['access_token'], resource=body.resource, owner=body.owner),
+            result = operator.perform(Experiment(token=r.json()['access_token'], resource=body.resource, owner=body.owner,
+                                                  operation=operation, amount=amount),
                                       attempt_id=attempt, request_id=request_id)
         except Exception as error:
             try:
@@ -216,7 +274,7 @@ def attach_portal(app, operator, submit, get_job):
                         stage['status'] = 'NOT_REACHED'
             result.update(responses=[{'status': code, 'error': reason}], reason=reason,
                           denial_point=phase if denied else None)
-        result.update(request={'resource': body.resource, 'owner': body.owner, 'method': 'GET'},
+        result.update(request={'resource': body.resource, 'owner': body.owner, 'method': 'POST' if operation == 'adjust' else 'GET'},
                       request_id=request_id, observed_at=datetime.now(timezone.utc).isoformat())
         result['stages'] = preliminary+result.get('stages', [])
         safe = public_attempt(result, value['subject'])
@@ -237,6 +295,15 @@ def attach_portal(app, operator, submit, get_job):
         csrf(request, value)
         attempt, request_id = str(uuid4()), str(uuid4())
         return submit(lambda: execute(value, body, attempt, request_id), owner=sid, attempt_id=attempt)
+
+    @app.post('/api/portal/salary/adjust', status_code=202)
+    def adjust(body: Adjustment, request: Request):
+        sid, value = current(request)
+        csrf(request, value)
+        attempt, request_id = str(uuid4()), str(uuid4())
+        access = Access(resource='salary', owner=body.owner)
+        return submit(lambda: execute(value, access, attempt, request_id, operation='adjust', amount=body.amount),
+                      owner=sid, attempt_id=attempt)
 
     @app.get('/api/portal/jobs/{job_id}')
     def job(job_id: str, request: Request):

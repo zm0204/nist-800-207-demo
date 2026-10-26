@@ -1,6 +1,6 @@
 # 員工服務與存取監控
 
-新版以 `542fee9` 為基底，保留原 Inspector。員工頁只提供 Salary／Profile 讀取，所有資料與拒絕均來自原有受保護服務；沒有前端 ownership 模擬，也沒有驗證 bypass。
+新版以 `542fee9` 為基底，保留原 Inspector。員工頁提供 Salary／Profile 讀取，以及經真正 Passkey Step-Up 的 Salary 修改；所有資料與拒絕均由既有安全管線執行，沒有前端 ownership 模擬或驗證 bypass。Profile 維持唯讀。
 
 ## 本次可開啟的獨立環境
 
@@ -42,12 +42,17 @@
 | POST `/api/portal/access` | 僅 `{resource: salary\|profile, owner: alice\|bob\|carol}`；回傳 202 `{id, state, attempt_id}` |
 | GET `/api/portal/jobs/{id}` | 僅目前登入 session 自己的工作；完成結果含實際 HTTP、後端 synthetic data、Attempt／Request ID 及證據階段 |
 | POST `/api/portal/logout` | `{}`；清除本機員工 session，登入逾期後也可登出 |
+| POST `/api/portal/step-up/options` | 僅 `{}`，subject 固定為目前已驗證的員工；建立獨立 ceremony cookie，綁定該員工 session |
+| POST `/api/portal/step-up/verify` | `{ceremony, credential}`；真正再次驗證 WebAuthn、同 subject，僅回傳 `{verified:true}`，不傳送 human token |
+| POST `/api/portal/salary/adjust` | `{owner: alice\|bob\|carol, amount: 整數 0..10000000}`；202 工作；需要一次性 Step-Up，再由既有 PA 交換 `salary:write`、PE 授權及後端寫入 |
 | GET `/api/observer/attempts` | 固定 `{alice: summary\|null, bob: summary\|null}`；另一人的最近請求持續保留 |
 | GET `/api/observer/attempts/{attempt_id}` | 已快取的安全明細；不回傳薪資內容、JWT、Session、完整 claims 或私鑰 |
 
 員工寫入 API 需要 `x-portal-csrf`；同時檢查同來源與 JSON。額外欄位、攻擊模式、任意 method／path／command 不接受。所有舊 `/api/identity`、`/api/agent`、`/api/inspector`、`/api/console` 路由，包括讀取管理 token，均要求獨立 `x-operator-key`；舊的 mutation CSRF 檢查仍保留。
 
 全球仍一次一筆工作（員工與 Inspector 共用）。忙碌回傳 409，不會執行另一個保護資源請求。已接受的工作在建立 PA Session／交換 JWT **之前**分配 Attempt ID；PA 提前拒絕與傳輸錯誤也有可追查結果。每次 access 以 Identity introspection 確認真實 subject，再使用相同裝置 mTLS 建立／重用 PA Session、交換短效 JWT 並發出真正 GET。
+
+在 Salary 頁展開「修改薪資」，輸入金額後按「驗證身分並儲存」。Alice／Bob 都會執行相同的實際驗證與後端請求，不會由 UI 預先判斷權限。Bob 的 write JWT 最長 30 秒，既有 PA 要求 60 秒內的同 subject 驗證；BFF 另外將 Step-Up token 限於一次修改嘗試。Alice 的既有 PA 會在 JWT 交換階段以 `session_scope_exceeded` 拒絕；Bob 對 Carol 的資源授權由 PE 拒絕。Observer 依真正拒絕位置顯示，未到達的 PE 不會顯示 DENY。
 
 Observer 每兩秒輪詢記憶體快取，明細只在 Attempt 變更後取得，不執行 kubectl。伺服器重啟後快取清空，畫面保持「尚無請求」，不載入歷史檔案偽裝成即時請求。最多保留 90 筆安全 Attempt 明細與 30 筆工作；Alice／Bob 最新快照保留到下一筆或程序重啟。
 
@@ -69,5 +74,18 @@ node --test tests/portal_ui.test.cjs
 ```
 
 真實整合驗收經過正在執行的 Portal HTTP、Identity WebAuthn signature 驗證、裝置 X.509／Envoy、PA Session／JWT、Istio receiving sidecar、PE 及 Resource Journal。測試專屬 software authenticator 只存在測試程式；伺服器沒有測試登入端點或驗證捷徑。此結果不代表已替使用者完成 Windows Hello／硬體金鑰的人工操作。
+
+2026-10-26 實際結果：原基準 144 項 Python 測試通過；交付版本 **159 項 Python＋2 項 Node UI 行為測試通過**。既有 Starlette／AnyIO alias 有 1 個上游 DeprecationWarning。
+
+- [12 組讀取矩陣與 API 隔離證據](evidence/2026-10-26/portal-p0-e2e.json)：Alice／Bob × Salary／Profile × Alice／Bob／Carol，均符合既有範圍，Journal 每筆實際查詢。
+- [薪資寫入與 read-after-write 證據](evidence/2026-10-26/portal-salary-e2e.json)：Alice PA 拒絕、Bob Carol PE 拒絕、Bob Alice 寫入並讀回 60,000、每次再次修改都完成新的真正 Step-Up。
+
+薪資修改驗收命令（會修改專屬測試叢集中的合成薪資，不操作原展示）：
+
+```powershell
+..\zta-207a\.venv\Scripts\python.exe scripts/verify_portal_salary.py
+```
+
+實際瀏覽器已檢查登入頁、常駐雙圖、紅綠灰連線與點擊節點展開證據；Windows Hello／硬體 Passkey 的互動仍需使用者本人完成。
 
 本次沒有增加 Profile 修改、NetworkPolicy／CNI、Egress、Vault、多叢集協調或完整 tracing。為保留可檢視的環境，不自動刪除測試叢集、PKI、測試金鑰或 PVC。

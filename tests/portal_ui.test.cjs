@@ -26,3 +26,30 @@ test('expired employee login returns to login and refreshes CSRF without reload'
   assert.equal(elements.get('login-panel').hidden,false);
   assert.equal(elements.get('workspace').hidden,true);
 });
+
+test('Alice salary edit signs WebAuthn and sends actual adjustment instead of frontend denial',async()=>{
+  const elements=new Map();
+  const document={getElementById(id){if(!elements.has(id))elements.set(id,{hidden:false,textContent:'',value:id==='owner'?'alice':id==='amount'?'61000':'',addEventListener(){},replaceChildren(){}});return elements.get(id);},querySelectorAll(){return [];}};
+  const calls=[];
+  const fetch=async(url,options)=>{
+    calls.push({url,body:options?.body?JSON.parse(options.body):null});
+    const data={
+      '/api/portal/session':{subject:'alice',csrf:'csrf'},
+      '/api/portal/step-up/options':{ceremony:'ceremony',publicKey:{challenge:'YQ',allowCredentials:[{id:'YQ'}]}},
+      '/api/portal/step-up/verify':{verified:true},
+      '/api/portal/salary/adjust':{id:'job',attempt_id:'attempt'},
+      '/api/portal/jobs/job':{state:'done',result:{attempt_id:'attempt',reason:'session_scope_exceeded',responses:[{status:403}]}}
+    }[url];
+    assert.ok(data,'unexpected endpoint '+url);
+    return {ok:true,status:200,json:async()=>data};
+  };
+  let signed=false;
+  const navigator={credentials:{get:async()=>{signed=true;const b=Uint8Array.from([1]).buffer;return{id:'credential',type:'public-key',rawId:b,response:{clientDataJSON:b,authenticatorData:b,signature:b,userHandle:null}};}}};
+  const source=fs.readFileSync(path.join(__dirname,'../console/portal.js'),'utf8');
+  const app=await vm.runInNewContext('(async()=>{'+source+';return {submitAdjustment};})()',{document,fetch,navigator,setTimeout:fn=>fn(),Uint8Array,Error,Date,atob,btoa});
+  await app.submitAdjustment();
+  assert.ok(signed);
+  assert.deepEqual(calls.find(c=>c.url==='/api/portal/salary/adjust').body,{owner:'alice',amount:61000});
+  assert.ok(calls.find(c=>c.url==='/api/portal/step-up/verify').body.credential.response.signature);
+  assert.equal(elements.get('result-status').textContent,'HTTP 403');
+});

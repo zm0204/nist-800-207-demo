@@ -73,3 +73,7 @@ def test_hr_write_scope_requires_fresh_same_subject_webauthn(stack, keys):
         claims = keys[0].verify(r.json()['access_token'])
         assert claims['sub'] == 'bob' and claims['role'] == 'hr' and claims['scope'] == 'salary:write'
         assert 0 < r.json()['expires_in'] <= 30
+        with db('identity') as c:
+            c.execute('UPDATE token SET auth_time=? WHERE hash=?', (int(time.time())-120, hashlib.sha256(fresh.encode()).hexdigest()))
+        stale = exchange(pc, sid, scope='salary:write', step_up_token=fresh)
+        assert stale.status_code == 403 and stale.json()['detail'] == 'step_up_required'

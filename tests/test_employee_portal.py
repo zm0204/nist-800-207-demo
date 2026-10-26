@@ -20,7 +20,7 @@ def portal(identity, monkeypatch):
         yield client, op, identity
 
 
-def login(client, identity, subject='alice'):
+def login(client, identity, subject='alice', with_auth=False):
     auth = Authenticator()
     if subject == 'alice':
         assert enroll(identity, auth).status_code == 200
@@ -35,7 +35,8 @@ def login(client, identity, subject='alice'):
     assert response.status_code == 200, response.text
     assert response.json()['subject'] == subject
     assert 'token' not in response.json()
-    return {'x-portal-csrf': response.json()['csrf']}
+    headers = {'x-portal-csrf': response.json()['csrf']}
+    return (headers, auth) if with_auth else headers
 
 
 def wait(client, job):
@@ -221,3 +222,88 @@ def test_logout_is_idempotent_after_session_expiry(portal):
     c.cookies.clear()
     assert c.post('/api/portal/logout', json={}, headers=h).status_code == 200
     assert c.get('/api/portal/session').json()['subject'] is None
+
+
+def step_up(c, h, auth):
+    options = c.post('/api/portal/step-up/options', json={}, headers=h)
+    assert options.status_code == 200
+    opts = options.json()
+    response = c.post('/api/portal/step-up/verify', json={'ceremony': opts['ceremony'], 'credential': auth.login(opts['publicKey'])}, headers=h)
+    assert response.status_code == 200, response.text
+    assert response.json() == {'verified': True}
+
+
+def test_salary_adjust_requires_real_step_up_and_alice_reaches_pa_rejection(portal, monkeypatch):
+    from app.inspection import inspect_attempt
+    c, op, identity = portal
+    h, auth = login(c, identity, with_auth=True)
+    def agent(path, body, token, *args, **kwargs):
+        if path == '/session':
+            return httpx.Response(200, json={'session_id': 'session'})
+        assert body['scope'] == 'salary:write'
+        assert identity.post('/introspect', json={'token': body['step_up_token']}, headers={'x-service-key':'test-key'}).json()['subject'] == 'alice'
+        return httpx.Response(403, json={'detail': 'session_scope_exceeded'})
+    monkeypatch.setattr(op, 'agent', agent)
+    monkeypatch.setattr(op, 'evidence', lambda attempt: inspect_attempt(attempt, [], [], []))
+    request = {'owner': 'alice', 'amount': 61000}
+    without = wait(c, c.post('/api/portal/salary/adjust', json=request, headers=h).json())
+    assert without['denial_point'] == 'step_up'
+    step_up(c, h, auth)
+    result = wait(c, c.post('/api/portal/salary/adjust', json=request, headers=h).json())
+    assert result['denial_point'] == 'token_exchange' and result['responses'][0]['status'] == 403
+    assert result['request']['method'] == 'POST'
+    assert next(s for s in result['stages'] if s['component'] == 'external_pe')['status'] == 'NOT_OBSERVED'
+
+
+def test_bob_adjust_sends_exact_amount_and_one_use_step_up_to_existing_pipeline(portal, monkeypatch):
+    from app.inspection import inspect_attempt
+    c, op, identity = portal
+    h, auth = login(c, identity, 'bob', with_auth=True)
+    private_tokens = []
+    def agent(path, body, token, *args, **kwargs):
+        if path == '/session':
+            return httpx.Response(200, json={'session_id': 'session'})
+        assert body['scope'] == 'salary:write' and body['step_up_token']
+        private_tokens.append(body['step_up_token'])
+        return httpx.Response(200, json={'access_token': 'write-jwt'})
+    def perform(spec, **ids):
+        assert spec.resource == 'salary' and spec.operation == 'adjust'
+        assert spec.amount == 62345 and spec.owner == 'alice' and spec.token == 'write-jwt'
+        raw = inspect_attempt(ids['attempt_id'], [], [], [{'subject':'bob'}])
+        raw.update(request={'resource':'salary','owner':'alice'}, responses=[{'status':200,'data':{'amount':62345}}])
+        return raw
+    monkeypatch.setattr(op, 'agent', agent)
+    monkeypatch.setattr(op, 'perform', perform)
+    monkeypatch.setattr(op, 'evidence', lambda attempt: inspect_attempt(attempt, [], [], []))
+    step_up(c, h, auth)
+    result = wait(c, c.post('/api/portal/salary/adjust', json={'owner':'alice','amount':62345}, headers=h).json())
+    assert result['responses'][0]['data']['amount'] == 62345
+    observer = c.get('/api/observer/attempts/'+result['attempt_id']).text
+    for secret in ['write-jwt', *private_tokens]:
+        assert secret not in str(result) and secret not in observer
+    again = wait(c, c.post('/api/portal/salary/adjust', json={'owner':'alice','amount':62345}, headers=h).json())
+    assert again['denial_point'] == 'step_up'
+    assert c.post('/api/portal/salary/adjust', json={'owner':'alice','amount':-1}, headers=h).status_code == 422
+    assert c.post('/api/portal/profile/adjust', json={'owner':'alice','amount':1}, headers=h).status_code == 404
+
+
+def test_step_up_rejects_switched_employee_session_and_wrong_user_signature(portal):
+    c, _, identity = portal
+    alice_h, alice_auth = login(c, identity, with_auth=True)
+    old = c.post('/api/portal/step-up/options', json={}, headers=alice_h).json()
+    bob_h, bob_auth = login(c, identity, 'bob', with_auth=True)
+    assert c.post('/api/portal/step-up/verify', json={'ceremony':old['ceremony'],'credential':alice_auth.login(old['publicKey'])}, headers=bob_h).status_code == 400
+    opts = c.post('/api/portal/step-up/options', json={}, headers=bob_h).json()
+    assert c.post('/api/portal/step-up/verify', json={'ceremony':opts['ceremony'],'credential':alice_auth.login(opts['publicKey'])}, headers=bob_h).status_code == 400
+    assert c.get('/api/portal/session').json()['subject'] == 'bob'
+
+
+def test_step_up_ceremony_cannot_be_replayed(portal):
+    c, _, identity = portal
+    h, auth = login(c, identity, with_auth=True)
+    opts = c.post('/api/portal/step-up/options', json={}, headers=h).json()
+    nonce = c.cookies.get('employee_step_up')
+    body = {'ceremony':opts['ceremony'],'credential':auth.login(opts['publicKey'])}
+    assert c.post('/api/portal/step-up/verify', json=body, headers=h).status_code == 200
+    c.cookies.set('employee_step_up', nonce)
+    assert c.post('/api/portal/step-up/verify', json=body, headers=h).status_code == 400
