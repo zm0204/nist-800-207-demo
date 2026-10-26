@@ -1,4 +1,6 @@
 const $=id=>document.getElementById(id);
+const operatorKey=new URLSearchParams(location.hash.slice(1)).get('operator')||'';
+if(operatorKey)history.replaceState(null,'','/inspector');
 let csrf='',humanToken='',writeToken='',sessions={},busy=false,lastResult=null;
 const dump=value=>JSON.stringify(value,null,2);
 const navigation=[...document.querySelectorAll('.rail nav a')];
@@ -34,7 +36,7 @@ window.addEventListener('scroll',scheduleNavigation,{passive:true});
 window.addEventListener('resize',scheduleNavigation);
 syncNavigation();
 async function api(path,body,method=body===undefined?'GET':'POST'){
-  const response=await fetch(path,{method,headers:{'Content-Type':'application/json','x-mesh-console':csrf},body:body===undefined?undefined:JSON.stringify(body)});
+  const response=await fetch(path,{method,headers:{'Content-Type':'application/json','x-mesh-console':csrf,'x-operator-key':operatorKey},body:body===undefined?undefined:JSON.stringify(body)});
   const data=await response.json();if(!response.ok)throw new Error(data.detail||dump(data));return data;
 }
 function error(message){$('error').textContent=message;$('error').hidden=!message;}

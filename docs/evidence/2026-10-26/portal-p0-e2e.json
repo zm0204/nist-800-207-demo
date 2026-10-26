@@ -1,0 +1,2544 @@
+{
+  "started_at": "2026-10-26T13:35:33.406577+00:00",
+  "environment": "kind-zta-portal-p0",
+  "passed": true,
+  "checks": [
+    {
+      "name": "alice real Passkey login",
+      "passed": true,
+      "status": 200
+    },
+    {
+      "name": "alice salary alice",
+      "passed": true,
+      "evidence": {
+        "attempt_id": "935692cb-408c-4c71-8b0c-d5695d522094",
+        "request_id": "a513c2dd-74a7-4180-a76b-727715c1e6cb",
+        "subject": "alice",
+        "request": {
+          "resource": "salary",
+          "owner": "alice",
+          "method": "GET"
+        },
+        "stages": [
+          {
+            "component": "identity",
+            "status": "VERIFIED_PASS",
+            "evidence": [
+              {
+                "source": "Identity introspection after verified WebAuthn",
+                "subject": "alice"
+              }
+            ]
+          },
+          {
+            "component": "pa_session",
+            "status": "VERIFIED_PASS",
+            "evidence": [
+              {
+                "status": 200,
+                "source": "Device mTLS gateway / PA session response"
+              }
+            ]
+          },
+          {
+            "component": "token_exchange",
+            "status": "VERIFIED_PASS",
+            "evidence": [
+              {
+                "status": 200,
+                "source": "Device mTLS gateway / PA exchange response"
+              }
+            ]
+          },
+          {
+            "component": "device-gateway",
+            "status": "NOT_OBSERVED",
+            "evidence": []
+          },
+          {
+            "component": "frontend",
+            "status": "VERIFIED_PASS",
+            "evidence": [
+              {
+                "component": "frontend",
+                "attempt_id": "935692cb-408c-4c71-8b0c-d5695d522094",
+                "request_id": "526fe532-0811-4646-b8c6-549743cab5d8",
+                "path": "/api/salary/alice",
+                "method": "GET",
+                "response_code": 200,
+                "response_code_details": "via_upstream",
+                "downstream_peer": null,
+                "upstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/salary",
+                "downstream_tls": null,
+                "upstream_tls": "TLSv1.3"
+              },
+              {
+                "component": "frontend",
+                "attempt_id": "935692cb-408c-4c71-8b0c-d5695d522094",
+                "request_id": "526fe532-0811-4646-b8c6-549743cab5d8",
+                "path": "/api/salary/alice",
+                "method": "GET",
+                "response_code": 200,
+                "response_code_details": "via_upstream",
+                "downstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/device-gateway",
+                "upstream_peer": null,
+                "downstream_tls": "TLSv1.3",
+                "upstream_tls": null
+              }
+            ]
+          },
+          {
+            "component": "salary",
+            "status": "VERIFIED_PASS",
+            "evidence": [
+              {
+                "component": "salary",
+                "attempt_id": "935692cb-408c-4c71-8b0c-d5695d522094",
+                "request_id": "526fe532-0811-4646-b8c6-549743cab5d8",
+                "path": "/api/salary/alice",
+                "method": "GET",
+                "response_code": 200,
+                "response_code_details": "via_upstream",
+                "downstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/frontend",
+                "upstream_peer": null,
+                "downstream_tls": "TLSv1.3",
+                "upstream_tls": null
+              }
+            ]
+          },
+          {
+            "component": "profile",
+            "status": "NOT_OBSERVED",
+            "evidence": []
+          },
+          {
+            "component": "external_pe",
+            "status": "VERIFIED_PASS",
+            "evidence": [
+              {
+                "attempt_id": "935692cb-408c-4c71-8b0c-d5695d522094",
+                "request_id": "526fe532-0811-4646-b8c6-549743cab5d8",
+                "decision": "ALLOW",
+                "reason": "resource_grant_matched",
+                "path": "/api/salary/alice",
+                "method": "GET",
+                "source": "spiffe://cluster.local/ns/zta-identity/sa/frontend"
+              }
+            ]
+          },
+          {
+            "component": "resource",
+            "status": "VERIFIED_PASS",
+            "evidence": [
+              {
+                "attempt_id": "935692cb-408c-4c71-8b0c-d5695d522094",
+                "request_id": "526fe532-0811-4646-b8c6-549743cab5d8",
+                "method": "GET",
+                "resource": "salary",
+                "owner": "alice",
+                "subject": "alice"
+              }
+            ]
+          },
+          {
+            "component": "native_deny",
+            "status": "VERIFIED_PASS",
+            "evidence": [
+              {
+                "component": "salary",
+                "attempt_id": "935692cb-408c-4c71-8b0c-d5695d522094",
+                "request_id": "526fe532-0811-4646-b8c6-549743cab5d8",
+                "path": "/api/salary/alice",
+                "method": "GET",
+                "response_code": 200,
+                "response_code_details": "via_upstream",
+                "downstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/frontend",
+                "upstream_peer": null,
+                "downstream_tls": "TLSv1.3",
+                "upstream_tls": null
+              }
+            ]
+          },
+          {
+            "component": "native_allow",
+            "status": "VERIFIED_PASS",
+            "evidence": [
+              {
+                "component": "salary",
+                "attempt_id": "935692cb-408c-4c71-8b0c-d5695d522094",
+                "request_id": "526fe532-0811-4646-b8c6-549743cab5d8",
+                "path": "/api/salary/alice",
+                "method": "GET",
+                "response_code": 200,
+                "response_code_details": "via_upstream",
+                "downstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/frontend",
+                "upstream_peer": null,
+                "downstream_tls": "TLSv1.3",
+                "upstream_tls": null
+              }
+            ]
+          }
+        ],
+        "responses": [
+          {
+            "status": 200,
+            "data": {
+              "resource": "salary",
+              "subject": "alice",
+              "currency": "TWD",
+              "amount": 50000,
+              "synthetic": true
+            },
+            "text": "{\"resource\":\"salary\",\"subject\":\"alice\",\"currency\":\"TWD\",\"amount\":50000,\"synthetic\":true}"
+          }
+        ],
+        "observed_at": "2026-10-26T13:35:47.241958+00:00",
+        "execution_query_observed": true,
+        "execution_count": 1,
+        "denial_point": null,
+        "reason": null
+      }
+    },
+    {
+      "name": "Journal queried for 935692cb-408c-4c71-8b0c-d5695d522094",
+      "passed": true
+    },
+    {
+      "name": "alice profile alice",
+      "passed": true,
+      "evidence": {
+        "attempt_id": "7c106058-5238-4afa-b3bc-adecf36f76b9",
+        "request_id": "54f3be58-3b13-4e39-a932-a66dafdc6631",
+        "subject": "alice",
+        "request": {
+          "resource": "profile",
+          "owner": "alice",
+          "method": "GET"
+        },
+        "stages": [
+          {
+            "component": "identity",
+            "status": "VERIFIED_PASS",
+            "evidence": [
+              {
+                "source": "Identity introspection after verified WebAuthn",
+                "subject": "alice"
+              }
+            ]
+          },
+          {
+            "component": "pa_session",
+            "status": "VERIFIED_PASS",
+            "evidence": [
+              {
+                "status": 200,
+                "source": "Device mTLS gateway / PA session response"
+              }
+            ]
+          },
+          {
+            "component": "token_exchange",
+            "status": "VERIFIED_PASS",
+            "evidence": [
+              {
+                "status": 200,
+                "source": "Device mTLS gateway / PA exchange response"
+              }
+            ]
+          },
+          {
+            "component": "device-gateway",
+            "status": "NOT_OBSERVED",
+            "evidence": []
+          },
+          {
+            "component": "frontend",
+            "status": "VERIFIED_PASS",
+            "evidence": [
+              {
+                "component": "frontend",
+                "attempt_id": "7c106058-5238-4afa-b3bc-adecf36f76b9",
+                "request_id": "f1018ebe-c02f-4c28-b2bc-52c25a8322e8",
+                "path": "/api/profile/alice",
+                "method": "GET",
+                "response_code": 200,
+                "response_code_details": "via_upstream",
+                "downstream_peer": null,
+                "upstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/profile",
+                "downstream_tls": null,
+                "upstream_tls": "TLSv1.3"
+              },
+              {
+                "component": "frontend",
+                "attempt_id": "7c106058-5238-4afa-b3bc-adecf36f76b9",
+                "request_id": "f1018ebe-c02f-4c28-b2bc-52c25a8322e8",
+                "path": "/api/profile/alice",
+                "method": "GET",
+                "response_code": 200,
+                "response_code_details": "via_upstream",
+                "downstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/device-gateway",
+                "upstream_peer": null,
+                "downstream_tls": "TLSv1.3",
+                "upstream_tls": null
+              }
+            ]
+          },
+          {
+            "component": "salary",
+            "status": "NOT_OBSERVED",
+            "evidence": []
+          },
+          {
+            "component": "profile",
+            "status": "VERIFIED_PASS",
+            "evidence": [
+              {
+                "component": "profile",
+                "attempt_id": "7c106058-5238-4afa-b3bc-adecf36f76b9",
+                "request_id": "f1018ebe-c02f-4c28-b2bc-52c25a8322e8",
+                "path": "/api/profile/alice",
+                "method": "GET",
+                "response_code": 200,
+                "response_code_details": "via_upstream",
+                "downstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/frontend",
+                "upstream_peer": null,
+                "downstream_tls": "TLSv1.3",
+                "upstream_tls": null
+              }
+            ]
+          },
+          {
+            "component": "external_pe",
+            "status": "VERIFIED_PASS",
+            "evidence": [
+              {
+                "attempt_id": "7c106058-5238-4afa-b3bc-adecf36f76b9",
+                "request_id": "f1018ebe-c02f-4c28-b2bc-52c25a8322e8",
+                "decision": "ALLOW",
+                "reason": "resource_grant_matched",
+                "path": "/api/profile/alice",
+                "method": "GET",
+                "source": "spiffe://cluster.local/ns/zta-identity/sa/frontend"
+              }
+            ]
+          },
+          {
+            "component": "resource",
+            "status": "VERIFIED_PASS",
+            "evidence": [
+              {
+                "attempt_id": "7c106058-5238-4afa-b3bc-adecf36f76b9",
+                "request_id": "f1018ebe-c02f-4c28-b2bc-52c25a8322e8",
+                "method": "GET",
+                "resource": "profile",
+                "owner": "alice",
+                "subject": "alice"
+              }
+            ]
+          },
+          {
+            "component": "native_deny",
+            "status": "VERIFIED_PASS",
+            "evidence": [
+              {
+                "component": "profile",
+                "attempt_id": "7c106058-5238-4afa-b3bc-adecf36f76b9",
+                "request_id": "f1018ebe-c02f-4c28-b2bc-52c25a8322e8",
+                "path": "/api/profile/alice",
+                "method": "GET",
+                "response_code": 200,
+                "response_code_details": "via_upstream",
+                "downstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/frontend",
+                "upstream_peer": null,
+                "downstream_tls": "TLSv1.3",
+                "upstream_tls": null
+              }
+            ]
+          },
+          {
+            "component": "native_allow",
+            "status": "VERIFIED_PASS",
+            "evidence": [
+              {
+                "component": "profile",
+                "attempt_id": "7c106058-5238-4afa-b3bc-adecf36f76b9",
+                "request_id": "f1018ebe-c02f-4c28-b2bc-52c25a8322e8",
+                "path": "/api/profile/alice",
+                "method": "GET",
+                "response_code": 200,
+                "response_code_details": "via_upstream",
+                "downstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/frontend",
+                "upstream_peer": null,
+                "downstream_tls": "TLSv1.3",
+                "upstream_tls": null
+              }
+            ]
+          }
+        ],
+        "responses": [
+          {
+            "status": 200,
+            "data": {
+              "resource": "profile",
+              "subject": "alice",
+              "role": "employee",
+              "synthetic": true
+            },
+            "text": "{\"resource\":\"profile\",\"subject\":\"alice\",\"role\":\"employee\",\"synthetic\":true}"
+          }
+        ],
+        "observed_at": "2026-10-26T13:35:58.721650+00:00",
+        "execution_query_observed": true,
+        "execution_count": 1,
+        "denial_point": null,
+        "reason": null
+      }
+    },
+    {
+      "name": "Journal queried for 7c106058-5238-4afa-b3bc-adecf36f76b9",
+      "passed": true
+    },
+    {
+      "name": "alice salary bob",
+      "passed": true,
+      "evidence": {
+        "attempt_id": "77160ad0-aae0-4e78-9916-d1b8a9a67c66",
+        "request_id": "a6b4443d-7d5e-4d60-a438-73013c0acee7",
+        "subject": "alice",
+        "request": {
+          "resource": "salary",
+          "owner": "bob",
+          "method": "GET"
+        },
+        "stages": [
+          {
+            "component": "identity",
+            "status": "VERIFIED_PASS",
+            "evidence": [
+              {
+                "source": "Identity introspection after verified WebAuthn",
+                "subject": "alice"
+              }
+            ]
+          },
+          {
+            "component": "pa_session",
+            "status": "VERIFIED_PASS",
+            "evidence": [
+              {
+                "status": 200,
+                "source": "PA exchange revalidated the cached device-bound Session"
+              }
+            ]
+          },
+          {
+            "component": "token_exchange",
+            "status": "VERIFIED_PASS",
+            "evidence": [
+              {
+                "status": 200,
+                "source": "Device mTLS gateway / PA exchange response"
+              }
+            ]
+          },
+          {
+            "component": "device-gateway",
+            "status": "NOT_OBSERVED",
+            "evidence": []
+          },
+          {
+            "component": "frontend",
+            "status": "VERIFIED_PASS",
+            "evidence": [
+              {
+                "component": "frontend",
+                "attempt_id": "77160ad0-aae0-4e78-9916-d1b8a9a67c66",
+                "request_id": "c273ec0e-ac1a-43a6-8e97-40c6704ac5b6",
+                "path": "/api/salary/bob",
+                "method": "GET",
+                "response_code": 403,
+                "response_code_details": "via_upstream",
+                "downstream_peer": null,
+                "upstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/salary",
+                "downstream_tls": null,
+                "upstream_tls": "TLSv1.3"
+              },
+              {
+                "component": "frontend",
+                "attempt_id": "77160ad0-aae0-4e78-9916-d1b8a9a67c66",
+                "request_id": "c273ec0e-ac1a-43a6-8e97-40c6704ac5b6",
+                "path": "/api/salary/bob",
+                "method": "GET",
+                "response_code": 403,
+                "response_code_details": "via_upstream",
+                "downstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/device-gateway",
+                "upstream_peer": null,
+                "downstream_tls": "TLSv1.3",
+                "upstream_tls": null
+              }
+            ]
+          },
+          {
+            "component": "salary",
+            "status": "VERIFIED_BLOCK",
+            "evidence": [
+              {
+                "component": "salary",
+                "attempt_id": "77160ad0-aae0-4e78-9916-d1b8a9a67c66",
+                "request_id": "c273ec0e-ac1a-43a6-8e97-40c6704ac5b6",
+                "path": "/api/salary/bob",
+                "method": "GET",
+                "response_code": 403,
+                "response_code_details": "ext_authz_denied",
+                "downstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/frontend",
+                "upstream_peer": null,
+                "downstream_tls": "TLSv1.3",
+                "upstream_tls": null
+              }
+            ]
+          },
+          {
+            "component": "profile",
+            "status": "NOT_OBSERVED",
+            "evidence": []
+          },
+          {
+            "component": "external_pe",
+            "status": "VERIFIED_BLOCK",
+            "evidence": [
+              {
+                "attempt_id": "77160ad0-aae0-4e78-9916-d1b8a9a67c66",
+                "request_id": "c273ec0e-ac1a-43a6-8e97-40c6704ac5b6",
+                "decision": "DENY",
+                "reason": "resource_ownership_denied",
+                "path": "/api/salary/bob",
+                "method": "GET",
+                "source": "spiffe://cluster.local/ns/zta-identity/sa/frontend"
+              }
+            ]
+          },
+          {
+            "component": "resource",
+            "status": "NOT_REACHED",
+            "evidence": []
+          },
+          {
+            "component": "native_deny",
+            "status": "NOT_OBSERVED",
+            "evidence": []
+          },
+          {
+            "component": "native_allow",
+            "status": "NOT_OBSERVED",
+            "evidence": []
+          }
+        ],
+        "responses": [
+          {
+            "status": 403,
+            "data": null,
+            "text": ""
+          }
+        ],
+        "observed_at": "2026-10-26T13:36:08.323872+00:00",
+        "execution_query_observed": true,
+        "execution_count": 0,
+        "denial_point": "external_pe",
+        "reason": "resource_ownership_denied"
+      }
+    },
+    {
+      "name": "Journal queried for 77160ad0-aae0-4e78-9916-d1b8a9a67c66",
+      "passed": true
+    },
+    {
+      "name": "CUSTOM denial and Native ALLOW unobserved",
+      "passed": true
+    },
+    {
+      "name": "alice profile bob",
+      "passed": true,
+      "evidence": {
+        "attempt_id": "f6844683-4ff3-4a64-972a-debd178221ad",
+        "request_id": "6e0afe1f-2146-485a-b7e8-033a9284f457",
+        "subject": "alice",
+        "request": {
+          "resource": "profile",
+          "owner": "bob",
+          "method": "GET"
+        },
+        "stages": [
+          {
+            "component": "identity",
+            "status": "VERIFIED_PASS",
+            "evidence": [
+              {
+                "source": "Identity introspection after verified WebAuthn",
+                "subject": "alice"
+              }
+            ]
+          },
+          {
+            "component": "pa_session",
+            "status": "VERIFIED_PASS",
+            "evidence": [
+              {
+                "status": 200,
+                "source": "PA exchange revalidated the cached device-bound Session"
+              }
+            ]
+          },
+          {
+            "component": "token_exchange",
+            "status": "VERIFIED_PASS",
+            "evidence": [
+              {
+                "status": 200,
+                "source": "Device mTLS gateway / PA exchange response"
+              }
+            ]
+          },
+          {
+            "component": "device-gateway",
+            "status": "NOT_OBSERVED",
+            "evidence": []
+          },
+          {
+            "component": "frontend",
+            "status": "VERIFIED_PASS",
+            "evidence": [
+              {
+                "component": "frontend",
+                "attempt_id": "f6844683-4ff3-4a64-972a-debd178221ad",
+                "request_id": "41aa9022-11c8-4da4-b797-8785c1aaa249",
+                "path": "/api/profile/bob",
+                "method": "GET",
+                "response_code": 403,
+                "response_code_details": "via_upstream",
+                "downstream_peer": null,
+                "upstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/profile",
+                "downstream_tls": null,
+                "upstream_tls": "TLSv1.3"
+              },
+              {
+                "component": "frontend",
+                "attempt_id": "f6844683-4ff3-4a64-972a-debd178221ad",
+                "request_id": "41aa9022-11c8-4da4-b797-8785c1aaa249",
+                "path": "/api/profile/bob",
+                "method": "GET",
+                "response_code": 403,
+                "response_code_details": "via_upstream",
+                "downstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/device-gateway",
+                "upstream_peer": null,
+                "downstream_tls": "TLSv1.3",
+                "upstream_tls": null
+              }
+            ]
+          },
+          {
+            "component": "salary",
+            "status": "NOT_OBSERVED",
+            "evidence": []
+          },
+          {
+            "component": "profile",
+            "status": "VERIFIED_BLOCK",
+            "evidence": [
+              {
+                "component": "profile",
+                "attempt_id": "f6844683-4ff3-4a64-972a-debd178221ad",
+                "request_id": "41aa9022-11c8-4da4-b797-8785c1aaa249",
+                "path": "/api/profile/bob",
+                "method": "GET",
+                "response_code": 403,
+                "response_code_details": "ext_authz_denied",
+                "downstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/frontend",
+                "upstream_peer": null,
+                "downstream_tls": "TLSv1.3",
+                "upstream_tls": null
+              }
+            ]
+          },
+          {
+            "component": "external_pe",
+            "status": "VERIFIED_BLOCK",
+            "evidence": [
+              {
+                "attempt_id": "f6844683-4ff3-4a64-972a-debd178221ad",
+                "request_id": "41aa9022-11c8-4da4-b797-8785c1aaa249",
+                "decision": "DENY",
+                "reason": "resource_ownership_denied",
+                "path": "/api/profile/bob",
+                "method": "GET",
+                "source": "spiffe://cluster.local/ns/zta-identity/sa/frontend"
+              }
+            ]
+          },
+          {
+            "component": "resource",
+            "status": "NOT_REACHED",
+            "evidence": []
+          },
+          {
+            "component": "native_deny",
+            "status": "NOT_OBSERVED",
+            "evidence": []
+          },
+          {
+            "component": "native_allow",
+            "status": "NOT_OBSERVED",
+            "evidence": []
+          }
+        ],
+        "responses": [
+          {
+            "status": 403,
+            "data": null,
+            "text": ""
+          }
+        ],
+        "observed_at": "2026-10-26T13:36:17.834394+00:00",
+        "execution_query_observed": true,
+        "execution_count": 0,
+        "denial_point": "external_pe",
+        "reason": "resource_ownership_denied"
+      }
+    },
+    {
+      "name": "Journal queried for f6844683-4ff3-4a64-972a-debd178221ad",
+      "passed": true
+    },
+    {
+      "name": "CUSTOM denial and Native ALLOW unobserved",
+      "passed": true
+    },
+    {
+      "name": "alice salary carol",
+      "passed": true,
+      "evidence": {
+        "attempt_id": "524e13c3-3e21-4974-bffe-50b413dc604e",
+        "request_id": "181abd1f-7fa5-492e-9bfd-6e5d1c3368cc",
+        "subject": "alice",
+        "request": {
+          "resource": "salary",
+          "owner": "carol",
+          "method": "GET"
+        },
+        "stages": [
+          {
+            "component": "identity",
+            "status": "VERIFIED_PASS",
+            "evidence": [
+              {
+                "source": "Identity introspection after verified WebAuthn",
+                "subject": "alice"
+              }
+            ]
+          },
+          {
+            "component": "pa_session",
+            "status": "VERIFIED_PASS",
+            "evidence": [
+              {
+                "status": 200,
+                "source": "PA exchange revalidated the cached device-bound Session"
+              }
+            ]
+          },
+          {
+            "component": "token_exchange",
+            "status": "VERIFIED_PASS",
+            "evidence": [
+              {
+                "status": 200,
+                "source": "Device mTLS gateway / PA exchange response"
+              }
+            ]
+          },
+          {
+            "component": "device-gateway",
+            "status": "NOT_OBSERVED",
+            "evidence": []
+          },
+          {
+            "component": "frontend",
+            "status": "VERIFIED_PASS",
+            "evidence": [
+              {
+                "component": "frontend",
+                "attempt_id": "524e13c3-3e21-4974-bffe-50b413dc604e",
+                "request_id": "aa79a40a-1b84-4a01-9e1a-b96cacb23161",
+                "path": "/api/salary/carol",
+                "method": "GET",
+                "response_code": 403,
+                "response_code_details": "via_upstream",
+                "downstream_peer": null,
+                "upstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/salary",
+                "downstream_tls": null,
+                "upstream_tls": "TLSv1.3"
+              },
+              {
+                "component": "frontend",
+                "attempt_id": "524e13c3-3e21-4974-bffe-50b413dc604e",
+                "request_id": "aa79a40a-1b84-4a01-9e1a-b96cacb23161",
+                "path": "/api/salary/carol",
+                "method": "GET",
+                "response_code": 403,
+                "response_code_details": "via_upstream",
+                "downstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/device-gateway",
+                "upstream_peer": null,
+                "downstream_tls": "TLSv1.3",
+                "upstream_tls": null
+              }
+            ]
+          },
+          {
+            "component": "salary",
+            "status": "VERIFIED_BLOCK",
+            "evidence": [
+              {
+                "component": "salary",
+                "attempt_id": "524e13c3-3e21-4974-bffe-50b413dc604e",
+                "request_id": "aa79a40a-1b84-4a01-9e1a-b96cacb23161",
+                "path": "/api/salary/carol",
+                "method": "GET",
+                "response_code": 403,
+                "response_code_details": "ext_authz_denied",
+                "downstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/frontend",
+                "upstream_peer": null,
+                "downstream_tls": "TLSv1.3",
+                "upstream_tls": null
+              }
+            ]
+          },
+          {
+            "component": "profile",
+            "status": "NOT_OBSERVED",
+            "evidence": []
+          },
+          {
+            "component": "external_pe",
+            "status": "VERIFIED_BLOCK",
+            "evidence": [
+              {
+                "attempt_id": "524e13c3-3e21-4974-bffe-50b413dc604e",
+                "request_id": "aa79a40a-1b84-4a01-9e1a-b96cacb23161",
+                "decision": "DENY",
+                "reason": "resource_ownership_denied",
+                "path": "/api/salary/carol",
+                "method": "GET",
+                "source": "spiffe://cluster.local/ns/zta-identity/sa/frontend"
+              }
+            ]
+          },
+          {
+            "component": "resource",
+            "status": "NOT_REACHED",
+            "evidence": []
+          },
+          {
+            "component": "native_deny",
+            "status": "NOT_OBSERVED",
+            "evidence": []
+          },
+          {
+            "component": "native_allow",
+            "status": "NOT_OBSERVED",
+            "evidence": []
+          }
+        ],
+        "responses": [
+          {
+            "status": 403,
+            "data": null,
+            "text": ""
+          }
+        ],
+        "observed_at": "2026-10-26T13:36:27.336230+00:00",
+        "execution_query_observed": true,
+        "execution_count": 0,
+        "denial_point": "external_pe",
+        "reason": "resource_ownership_denied"
+      }
+    },
+    {
+      "name": "Journal queried for 524e13c3-3e21-4974-bffe-50b413dc604e",
+      "passed": true
+    },
+    {
+      "name": "CUSTOM denial and Native ALLOW unobserved",
+      "passed": true
+    },
+    {
+      "name": "alice profile carol",
+      "passed": true,
+      "evidence": {
+        "attempt_id": "13ddf371-8edf-4bff-a4bc-a2dcf2971047",
+        "request_id": "1fb5b974-74ad-4049-b7da-ffaa2c0019aa",
+        "subject": "alice",
+        "request": {
+          "resource": "profile",
+          "owner": "carol",
+          "method": "GET"
+        },
+        "stages": [
+          {
+            "component": "identity",
+            "status": "VERIFIED_PASS",
+            "evidence": [
+              {
+                "source": "Identity introspection after verified WebAuthn",
+                "subject": "alice"
+              }
+            ]
+          },
+          {
+            "component": "pa_session",
+            "status": "VERIFIED_PASS",
+            "evidence": [
+              {
+                "status": 200,
+                "source": "PA exchange revalidated the cached device-bound Session"
+              }
+            ]
+          },
+          {
+            "component": "token_exchange",
+            "status": "VERIFIED_PASS",
+            "evidence": [
+              {
+                "status": 200,
+                "source": "Device mTLS gateway / PA exchange response"
+              }
+            ]
+          },
+          {
+            "component": "device-gateway",
+            "status": "NOT_OBSERVED",
+            "evidence": []
+          },
+          {
+            "component": "frontend",
+            "status": "VERIFIED_PASS",
+            "evidence": [
+              {
+                "component": "frontend",
+                "attempt_id": "13ddf371-8edf-4bff-a4bc-a2dcf2971047",
+                "request_id": "702b48c8-3ca6-47d1-a298-ea57ebca693b",
+                "path": "/api/profile/carol",
+                "method": "GET",
+                "response_code": 403,
+                "response_code_details": "via_upstream",
+                "downstream_peer": null,
+                "upstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/profile",
+                "downstream_tls": null,
+                "upstream_tls": "TLSv1.3"
+              },
+              {
+                "component": "frontend",
+                "attempt_id": "13ddf371-8edf-4bff-a4bc-a2dcf2971047",
+                "request_id": "702b48c8-3ca6-47d1-a298-ea57ebca693b",
+                "path": "/api/profile/carol",
+                "method": "GET",
+                "response_code": 403,
+                "response_code_details": "via_upstream",
+                "downstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/device-gateway",
+                "upstream_peer": null,
+                "downstream_tls": "TLSv1.3",
+                "upstream_tls": null
+              }
+            ]
+          },
+          {
+            "component": "salary",
+            "status": "NOT_OBSERVED",
+            "evidence": []
+          },
+          {
+            "component": "profile",
+            "status": "VERIFIED_BLOCK",
+            "evidence": [
+              {
+                "component": "profile",
+                "attempt_id": "13ddf371-8edf-4bff-a4bc-a2dcf2971047",
+                "request_id": "702b48c8-3ca6-47d1-a298-ea57ebca693b",
+                "path": "/api/profile/carol",
+                "method": "GET",
+                "response_code": 403,
+                "response_code_details": "ext_authz_denied",
+                "downstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/frontend",
+                "upstream_peer": null,
+                "downstream_tls": "TLSv1.3",
+                "upstream_tls": null
+              }
+            ]
+          },
+          {
+            "component": "external_pe",
+            "status": "VERIFIED_BLOCK",
+            "evidence": [
+              {
+                "attempt_id": "13ddf371-8edf-4bff-a4bc-a2dcf2971047",
+                "request_id": "702b48c8-3ca6-47d1-a298-ea57ebca693b",
+                "decision": "DENY",
+                "reason": "resource_ownership_denied",
+                "path": "/api/profile/carol",
+                "method": "GET",
+                "source": "spiffe://cluster.local/ns/zta-identity/sa/frontend"
+              }
+            ]
+          },
+          {
+            "component": "resource",
+            "status": "NOT_REACHED",
+            "evidence": []
+          },
+          {
+            "component": "native_deny",
+            "status": "NOT_OBSERVED",
+            "evidence": []
+          },
+          {
+            "component": "native_allow",
+            "status": "NOT_OBSERVED",
+            "evidence": []
+          }
+        ],
+        "responses": [
+          {
+            "status": 403,
+            "data": null,
+            "text": ""
+          }
+        ],
+        "observed_at": "2026-10-26T13:36:37.357911+00:00",
+        "execution_query_observed": true,
+        "execution_count": 0,
+        "denial_point": "external_pe",
+        "reason": "resource_ownership_denied"
+      }
+    },
+    {
+      "name": "Journal queried for 13ddf371-8edf-4bff-a4bc-a2dcf2971047",
+      "passed": true
+    },
+    {
+      "name": "CUSTOM denial and Native ALLOW unobserved",
+      "passed": true
+    },
+    {
+      "name": "bob real Passkey login",
+      "passed": true,
+      "status": 200
+    },
+    {
+      "name": "bob salary bob",
+      "passed": true,
+      "evidence": {
+        "attempt_id": "f200e24a-f620-4f3a-98d7-860785455595",
+        "request_id": "e4c8e7a0-34e7-4007-9e34-b1b4ddbbf824",
+        "subject": "bob",
+        "request": {
+          "resource": "salary",
+          "owner": "bob",
+          "method": "GET"
+        },
+        "stages": [
+          {
+            "component": "identity",
+            "status": "VERIFIED_PASS",
+            "evidence": [
+              {
+                "source": "Identity introspection after verified WebAuthn",
+                "subject": "bob"
+              }
+            ]
+          },
+          {
+            "component": "pa_session",
+            "status": "VERIFIED_PASS",
+            "evidence": [
+              {
+                "status": 200,
+                "source": "Device mTLS gateway / PA session response"
+              }
+            ]
+          },
+          {
+            "component": "token_exchange",
+            "status": "VERIFIED_PASS",
+            "evidence": [
+              {
+                "status": 200,
+                "source": "Device mTLS gateway / PA exchange response"
+              }
+            ]
+          },
+          {
+            "component": "device-gateway",
+            "status": "VERIFIED_PASS",
+            "evidence": [
+              {
+                "component": "device-gateway",
+                "attempt_id": "f200e24a-f620-4f3a-98d7-860785455595",
+                "request_id": "baec0ee7-07dc-4970-bf9b-88b0df1e3422",
+                "path": "/api/salary/bob",
+                "method": "GET",
+                "response_code": 200,
+                "response_code_details": "via_upstream",
+                "downstream_peer": "urn:zta:device:device-a",
+                "upstream_peer": null,
+                "downstream_tls": "TLSv1.3",
+                "upstream_tls": null
+              }
+            ]
+          },
+          {
+            "component": "frontend",
+            "status": "VERIFIED_PASS",
+            "evidence": [
+              {
+                "component": "frontend",
+                "attempt_id": "f200e24a-f620-4f3a-98d7-860785455595",
+                "request_id": "baec0ee7-07dc-4970-bf9b-88b0df1e3422",
+                "path": "/api/salary/bob",
+                "method": "GET",
+                "response_code": 200,
+                "response_code_details": "via_upstream",
+                "downstream_peer": null,
+                "upstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/salary",
+                "downstream_tls": null,
+                "upstream_tls": "TLSv1.3"
+              },
+              {
+                "component": "frontend",
+                "attempt_id": "f200e24a-f620-4f3a-98d7-860785455595",
+                "request_id": "baec0ee7-07dc-4970-bf9b-88b0df1e3422",
+                "path": "/api/salary/bob",
+                "method": "GET",
+                "response_code": 200,
+                "response_code_details": "via_upstream",
+                "downstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/device-gateway",
+                "upstream_peer": null,
+                "downstream_tls": "TLSv1.3",
+                "upstream_tls": null
+              }
+            ]
+          },
+          {
+            "component": "salary",
+            "status": "VERIFIED_PASS",
+            "evidence": [
+              {
+                "component": "salary",
+                "attempt_id": "f200e24a-f620-4f3a-98d7-860785455595",
+                "request_id": "baec0ee7-07dc-4970-bf9b-88b0df1e3422",
+                "path": "/api/salary/bob",
+                "method": "GET",
+                "response_code": 200,
+                "response_code_details": "via_upstream",
+                "downstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/frontend",
+                "upstream_peer": null,
+                "downstream_tls": "TLSv1.3",
+                "upstream_tls": null
+              }
+            ]
+          },
+          {
+            "component": "profile",
+            "status": "NOT_OBSERVED",
+            "evidence": []
+          },
+          {
+            "component": "external_pe",
+            "status": "VERIFIED_PASS",
+            "evidence": [
+              {
+                "attempt_id": "f200e24a-f620-4f3a-98d7-860785455595",
+                "request_id": "baec0ee7-07dc-4970-bf9b-88b0df1e3422",
+                "decision": "ALLOW",
+                "reason": "resource_grant_matched",
+                "path": "/api/salary/bob",
+                "method": "GET",
+                "source": "spiffe://cluster.local/ns/zta-identity/sa/frontend"
+              }
+            ]
+          },
+          {
+            "component": "resource",
+            "status": "VERIFIED_PASS",
+            "evidence": [
+              {
+                "attempt_id": "f200e24a-f620-4f3a-98d7-860785455595",
+                "request_id": "baec0ee7-07dc-4970-bf9b-88b0df1e3422",
+                "method": "GET",
+                "resource": "salary",
+                "owner": "bob",
+                "subject": "bob"
+              }
+            ]
+          },
+          {
+            "component": "native_deny",
+            "status": "VERIFIED_PASS",
+            "evidence": [
+              {
+                "component": "salary",
+                "attempt_id": "f200e24a-f620-4f3a-98d7-860785455595",
+                "request_id": "baec0ee7-07dc-4970-bf9b-88b0df1e3422",
+                "path": "/api/salary/bob",
+                "method": "GET",
+                "response_code": 200,
+                "response_code_details": "via_upstream",
+                "downstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/frontend",
+                "upstream_peer": null,
+                "downstream_tls": "TLSv1.3",
+                "upstream_tls": null
+              }
+            ]
+          },
+          {
+            "component": "native_allow",
+            "status": "VERIFIED_PASS",
+            "evidence": [
+              {
+                "component": "salary",
+                "attempt_id": "f200e24a-f620-4f3a-98d7-860785455595",
+                "request_id": "baec0ee7-07dc-4970-bf9b-88b0df1e3422",
+                "path": "/api/salary/bob",
+                "method": "GET",
+                "response_code": 200,
+                "response_code_details": "via_upstream",
+                "downstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/frontend",
+                "upstream_peer": null,
+                "downstream_tls": "TLSv1.3",
+                "upstream_tls": null
+              }
+            ]
+          }
+        ],
+        "responses": [
+          {
+            "status": 200,
+            "data": {
+              "resource": "salary",
+              "subject": "bob",
+              "currency": "TWD",
+              "amount": 50000,
+              "synthetic": true
+            },
+            "text": "{\"resource\":\"salary\",\"subject\":\"bob\",\"currency\":\"TWD\",\"amount\":50000,\"synthetic\":true}"
+          }
+        ],
+        "observed_at": "2026-10-26T13:36:49.941256+00:00",
+        "execution_query_observed": true,
+        "execution_count": 1,
+        "denial_point": null,
+        "reason": null
+      }
+    },
+    {
+      "name": "Journal queried for f200e24a-f620-4f3a-98d7-860785455595",
+      "passed": true
+    },
+    {
+      "name": "bob profile bob",
+      "passed": true,
+      "evidence": {
+        "attempt_id": "ba919ec5-a2f1-4160-bd74-49463edabfbd",
+        "request_id": "a5f34be1-5193-4c20-a420-2562472f546b",
+        "subject": "bob",
+        "request": {
+          "resource": "profile",
+          "owner": "bob",
+          "method": "GET"
+        },
+        "stages": [
+          {
+            "component": "identity",
+            "status": "VERIFIED_PASS",
+            "evidence": [
+              {
+                "source": "Identity introspection after verified WebAuthn",
+                "subject": "bob"
+              }
+            ]
+          },
+          {
+            "component": "pa_session",
+            "status": "VERIFIED_PASS",
+            "evidence": [
+              {
+                "status": 200,
+                "source": "Device mTLS gateway / PA session response"
+              }
+            ]
+          },
+          {
+            "component": "token_exchange",
+            "status": "VERIFIED_PASS",
+            "evidence": [
+              {
+                "status": 200,
+                "source": "Device mTLS gateway / PA exchange response"
+              }
+            ]
+          },
+          {
+            "component": "device-gateway",
+            "status": "VERIFIED_PASS",
+            "evidence": [
+              {
+                "component": "device-gateway",
+                "attempt_id": "ba919ec5-a2f1-4160-bd74-49463edabfbd",
+                "request_id": "0c949b24-3bdb-4c79-9084-c2386536fb1c",
+                "path": "/api/profile/bob",
+                "method": "GET",
+                "response_code": 200,
+                "response_code_details": "via_upstream",
+                "downstream_peer": "urn:zta:device:device-a",
+                "upstream_peer": null,
+                "downstream_tls": "TLSv1.3",
+                "upstream_tls": null
+              }
+            ]
+          },
+          {
+            "component": "frontend",
+            "status": "VERIFIED_PASS",
+            "evidence": [
+              {
+                "component": "frontend",
+                "attempt_id": "ba919ec5-a2f1-4160-bd74-49463edabfbd",
+                "request_id": "0c949b24-3bdb-4c79-9084-c2386536fb1c",
+                "path": "/api/profile/bob",
+                "method": "GET",
+                "response_code": 200,
+                "response_code_details": "via_upstream",
+                "downstream_peer": null,
+                "upstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/profile",
+                "downstream_tls": null,
+                "upstream_tls": "TLSv1.3"
+              },
+              {
+                "component": "frontend",
+                "attempt_id": "ba919ec5-a2f1-4160-bd74-49463edabfbd",
+                "request_id": "0c949b24-3bdb-4c79-9084-c2386536fb1c",
+                "path": "/api/profile/bob",
+                "method": "GET",
+                "response_code": 200,
+                "response_code_details": "via_upstream",
+                "downstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/device-gateway",
+                "upstream_peer": null,
+                "downstream_tls": "TLSv1.3",
+                "upstream_tls": null
+              }
+            ]
+          },
+          {
+            "component": "salary",
+            "status": "NOT_OBSERVED",
+            "evidence": []
+          },
+          {
+            "component": "profile",
+            "status": "VERIFIED_PASS",
+            "evidence": [
+              {
+                "component": "profile",
+                "attempt_id": "ba919ec5-a2f1-4160-bd74-49463edabfbd",
+                "request_id": "0c949b24-3bdb-4c79-9084-c2386536fb1c",
+                "path": "/api/profile/bob",
+                "method": "GET",
+                "response_code": 200,
+                "response_code_details": "via_upstream",
+                "downstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/frontend",
+                "upstream_peer": null,
+                "downstream_tls": "TLSv1.3",
+                "upstream_tls": null
+              }
+            ]
+          },
+          {
+            "component": "external_pe",
+            "status": "VERIFIED_PASS",
+            "evidence": [
+              {
+                "attempt_id": "ba919ec5-a2f1-4160-bd74-49463edabfbd",
+                "request_id": "0c949b24-3bdb-4c79-9084-c2386536fb1c",
+                "decision": "ALLOW",
+                "reason": "resource_grant_matched",
+                "path": "/api/profile/bob",
+                "method": "GET",
+                "source": "spiffe://cluster.local/ns/zta-identity/sa/frontend"
+              }
+            ]
+          },
+          {
+            "component": "resource",
+            "status": "VERIFIED_PASS",
+            "evidence": [
+              {
+                "attempt_id": "ba919ec5-a2f1-4160-bd74-49463edabfbd",
+                "request_id": "0c949b24-3bdb-4c79-9084-c2386536fb1c",
+                "method": "GET",
+                "resource": "profile",
+                "owner": "bob",
+                "subject": "bob"
+              }
+            ]
+          },
+          {
+            "component": "native_deny",
+            "status": "VERIFIED_PASS",
+            "evidence": [
+              {
+                "component": "profile",
+                "attempt_id": "ba919ec5-a2f1-4160-bd74-49463edabfbd",
+                "request_id": "0c949b24-3bdb-4c79-9084-c2386536fb1c",
+                "path": "/api/profile/bob",
+                "method": "GET",
+                "response_code": 200,
+                "response_code_details": "via_upstream",
+                "downstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/frontend",
+                "upstream_peer": null,
+                "downstream_tls": "TLSv1.3",
+                "upstream_tls": null
+              }
+            ]
+          },
+          {
+            "component": "native_allow",
+            "status": "VERIFIED_PASS",
+            "evidence": [
+              {
+                "component": "profile",
+                "attempt_id": "ba919ec5-a2f1-4160-bd74-49463edabfbd",
+                "request_id": "0c949b24-3bdb-4c79-9084-c2386536fb1c",
+                "path": "/api/profile/bob",
+                "method": "GET",
+                "response_code": 200,
+                "response_code_details": "via_upstream",
+                "downstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/frontend",
+                "upstream_peer": null,
+                "downstream_tls": "TLSv1.3",
+                "upstream_tls": null
+              }
+            ]
+          }
+        ],
+        "responses": [
+          {
+            "status": 200,
+            "data": {
+              "resource": "profile",
+              "subject": "bob",
+              "role": "employee",
+              "synthetic": true
+            },
+            "text": "{\"resource\":\"profile\",\"subject\":\"bob\",\"role\":\"employee\",\"synthetic\":true}"
+          }
+        ],
+        "observed_at": "2026-10-26T13:36:59.743772+00:00",
+        "execution_query_observed": true,
+        "execution_count": 1,
+        "denial_point": null,
+        "reason": null
+      }
+    },
+    {
+      "name": "Journal queried for ba919ec5-a2f1-4160-bd74-49463edabfbd",
+      "passed": true
+    },
+    {
+      "name": "bob salary alice",
+      "passed": true,
+      "evidence": {
+        "attempt_id": "7b2202f2-baa4-483e-ab50-d069012719a3",
+        "request_id": "30191c51-ba70-48a2-a016-9e22b42ce8e4",
+        "subject": "bob",
+        "request": {
+          "resource": "salary",
+          "owner": "alice",
+          "method": "GET"
+        },
+        "stages": [
+          {
+            "component": "identity",
+            "status": "VERIFIED_PASS",
+            "evidence": [
+              {
+                "source": "Identity introspection after verified WebAuthn",
+                "subject": "bob"
+              }
+            ]
+          },
+          {
+            "component": "pa_session",
+            "status": "VERIFIED_PASS",
+            "evidence": [
+              {
+                "status": 200,
+                "source": "PA exchange revalidated the cached device-bound Session"
+              }
+            ]
+          },
+          {
+            "component": "token_exchange",
+            "status": "VERIFIED_PASS",
+            "evidence": [
+              {
+                "status": 200,
+                "source": "Device mTLS gateway / PA exchange response"
+              }
+            ]
+          },
+          {
+            "component": "device-gateway",
+            "status": "VERIFIED_PASS",
+            "evidence": [
+              {
+                "component": "device-gateway",
+                "attempt_id": "7b2202f2-baa4-483e-ab50-d069012719a3",
+                "request_id": "8922516b-3897-48d0-98a0-dda1a8d92c49",
+                "path": "/api/salary/alice",
+                "method": "GET",
+                "response_code": 200,
+                "response_code_details": "via_upstream",
+                "downstream_peer": "urn:zta:device:device-a",
+                "upstream_peer": null,
+                "downstream_tls": "TLSv1.3",
+                "upstream_tls": null
+              }
+            ]
+          },
+          {
+            "component": "frontend",
+            "status": "VERIFIED_PASS",
+            "evidence": [
+              {
+                "component": "frontend",
+                "attempt_id": "7b2202f2-baa4-483e-ab50-d069012719a3",
+                "request_id": "8922516b-3897-48d0-98a0-dda1a8d92c49",
+                "path": "/api/salary/alice",
+                "method": "GET",
+                "response_code": 200,
+                "response_code_details": "via_upstream",
+                "downstream_peer": null,
+                "upstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/salary",
+                "downstream_tls": null,
+                "upstream_tls": "TLSv1.3"
+              },
+              {
+                "component": "frontend",
+                "attempt_id": "7b2202f2-baa4-483e-ab50-d069012719a3",
+                "request_id": "8922516b-3897-48d0-98a0-dda1a8d92c49",
+                "path": "/api/salary/alice",
+                "method": "GET",
+                "response_code": 200,
+                "response_code_details": "via_upstream",
+                "downstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/device-gateway",
+                "upstream_peer": null,
+                "downstream_tls": "TLSv1.3",
+                "upstream_tls": null
+              }
+            ]
+          },
+          {
+            "component": "salary",
+            "status": "VERIFIED_PASS",
+            "evidence": [
+              {
+                "component": "salary",
+                "attempt_id": "7b2202f2-baa4-483e-ab50-d069012719a3",
+                "request_id": "8922516b-3897-48d0-98a0-dda1a8d92c49",
+                "path": "/api/salary/alice",
+                "method": "GET",
+                "response_code": 200,
+                "response_code_details": "via_upstream",
+                "downstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/frontend",
+                "upstream_peer": null,
+                "downstream_tls": "TLSv1.3",
+                "upstream_tls": null
+              }
+            ]
+          },
+          {
+            "component": "profile",
+            "status": "NOT_OBSERVED",
+            "evidence": []
+          },
+          {
+            "component": "external_pe",
+            "status": "VERIFIED_PASS",
+            "evidence": [
+              {
+                "attempt_id": "7b2202f2-baa4-483e-ab50-d069012719a3",
+                "request_id": "8922516b-3897-48d0-98a0-dda1a8d92c49",
+                "decision": "ALLOW",
+                "reason": "resource_grant_matched",
+                "path": "/api/salary/alice",
+                "method": "GET",
+                "source": "spiffe://cluster.local/ns/zta-identity/sa/frontend"
+              }
+            ]
+          },
+          {
+            "component": "resource",
+            "status": "VERIFIED_PASS",
+            "evidence": [
+              {
+                "attempt_id": "7b2202f2-baa4-483e-ab50-d069012719a3",
+                "request_id": "8922516b-3897-48d0-98a0-dda1a8d92c49",
+                "method": "GET",
+                "resource": "salary",
+                "owner": "alice",
+                "subject": "bob"
+              }
+            ]
+          },
+          {
+            "component": "native_deny",
+            "status": "VERIFIED_PASS",
+            "evidence": [
+              {
+                "component": "salary",
+                "attempt_id": "7b2202f2-baa4-483e-ab50-d069012719a3",
+                "request_id": "8922516b-3897-48d0-98a0-dda1a8d92c49",
+                "path": "/api/salary/alice",
+                "method": "GET",
+                "response_code": 200,
+                "response_code_details": "via_upstream",
+                "downstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/frontend",
+                "upstream_peer": null,
+                "downstream_tls": "TLSv1.3",
+                "upstream_tls": null
+              }
+            ]
+          },
+          {
+            "component": "native_allow",
+            "status": "VERIFIED_PASS",
+            "evidence": [
+              {
+                "component": "salary",
+                "attempt_id": "7b2202f2-baa4-483e-ab50-d069012719a3",
+                "request_id": "8922516b-3897-48d0-98a0-dda1a8d92c49",
+                "path": "/api/salary/alice",
+                "method": "GET",
+                "response_code": 200,
+                "response_code_details": "via_upstream",
+                "downstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/frontend",
+                "upstream_peer": null,
+                "downstream_tls": "TLSv1.3",
+                "upstream_tls": null
+              }
+            ]
+          }
+        ],
+        "responses": [
+          {
+            "status": 200,
+            "data": {
+              "resource": "salary",
+              "subject": "alice",
+              "currency": "TWD",
+              "amount": 50000,
+              "synthetic": true
+            },
+            "text": "{\"resource\":\"salary\",\"subject\":\"alice\",\"currency\":\"TWD\",\"amount\":50000,\"synthetic\":true}"
+          }
+        ],
+        "observed_at": "2026-10-26T13:37:09.743003+00:00",
+        "execution_query_observed": true,
+        "execution_count": 1,
+        "denial_point": null,
+        "reason": null
+      }
+    },
+    {
+      "name": "Journal queried for 7b2202f2-baa4-483e-ab50-d069012719a3",
+      "passed": true
+    },
+    {
+      "name": "bob profile alice",
+      "passed": true,
+      "evidence": {
+        "attempt_id": "3c04c17a-a8b2-40fc-a5c0-3abd2fd898df",
+        "request_id": "f7c80e69-652b-4b7b-bf2f-706f1dc828d1",
+        "subject": "bob",
+        "request": {
+          "resource": "profile",
+          "owner": "alice",
+          "method": "GET"
+        },
+        "stages": [
+          {
+            "component": "identity",
+            "status": "VERIFIED_PASS",
+            "evidence": [
+              {
+                "source": "Identity introspection after verified WebAuthn",
+                "subject": "bob"
+              }
+            ]
+          },
+          {
+            "component": "pa_session",
+            "status": "VERIFIED_PASS",
+            "evidence": [
+              {
+                "status": 200,
+                "source": "PA exchange revalidated the cached device-bound Session"
+              }
+            ]
+          },
+          {
+            "component": "token_exchange",
+            "status": "VERIFIED_PASS",
+            "evidence": [
+              {
+                "status": 200,
+                "source": "Device mTLS gateway / PA exchange response"
+              }
+            ]
+          },
+          {
+            "component": "device-gateway",
+            "status": "VERIFIED_PASS",
+            "evidence": [
+              {
+                "component": "device-gateway",
+                "attempt_id": "3c04c17a-a8b2-40fc-a5c0-3abd2fd898df",
+                "request_id": "f08c4146-79db-4735-ac01-5fdd2aa3fd07",
+                "path": "/api/profile/alice",
+                "method": "GET",
+                "response_code": 200,
+                "response_code_details": "via_upstream",
+                "downstream_peer": "urn:zta:device:device-a",
+                "upstream_peer": null,
+                "downstream_tls": "TLSv1.3",
+                "upstream_tls": null
+              }
+            ]
+          },
+          {
+            "component": "frontend",
+            "status": "VERIFIED_PASS",
+            "evidence": [
+              {
+                "component": "frontend",
+                "attempt_id": "3c04c17a-a8b2-40fc-a5c0-3abd2fd898df",
+                "request_id": "f08c4146-79db-4735-ac01-5fdd2aa3fd07",
+                "path": "/api/profile/alice",
+                "method": "GET",
+                "response_code": 200,
+                "response_code_details": "via_upstream",
+                "downstream_peer": null,
+                "upstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/profile",
+                "downstream_tls": null,
+                "upstream_tls": "TLSv1.3"
+              },
+              {
+                "component": "frontend",
+                "attempt_id": "3c04c17a-a8b2-40fc-a5c0-3abd2fd898df",
+                "request_id": "f08c4146-79db-4735-ac01-5fdd2aa3fd07",
+                "path": "/api/profile/alice",
+                "method": "GET",
+                "response_code": 200,
+                "response_code_details": "via_upstream",
+                "downstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/device-gateway",
+                "upstream_peer": null,
+                "downstream_tls": "TLSv1.3",
+                "upstream_tls": null
+              }
+            ]
+          },
+          {
+            "component": "salary",
+            "status": "NOT_OBSERVED",
+            "evidence": []
+          },
+          {
+            "component": "profile",
+            "status": "VERIFIED_PASS",
+            "evidence": [
+              {
+                "component": "profile",
+                "attempt_id": "3c04c17a-a8b2-40fc-a5c0-3abd2fd898df",
+                "request_id": "f08c4146-79db-4735-ac01-5fdd2aa3fd07",
+                "path": "/api/profile/alice",
+                "method": "GET",
+                "response_code": 200,
+                "response_code_details": "via_upstream",
+                "downstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/frontend",
+                "upstream_peer": null,
+                "downstream_tls": "TLSv1.3",
+                "upstream_tls": null
+              }
+            ]
+          },
+          {
+            "component": "external_pe",
+            "status": "VERIFIED_PASS",
+            "evidence": [
+              {
+                "attempt_id": "3c04c17a-a8b2-40fc-a5c0-3abd2fd898df",
+                "request_id": "f08c4146-79db-4735-ac01-5fdd2aa3fd07",
+                "decision": "ALLOW",
+                "reason": "resource_grant_matched",
+                "path": "/api/profile/alice",
+                "method": "GET",
+                "source": "spiffe://cluster.local/ns/zta-identity/sa/frontend"
+              }
+            ]
+          },
+          {
+            "component": "resource",
+            "status": "VERIFIED_PASS",
+            "evidence": [
+              {
+                "attempt_id": "3c04c17a-a8b2-40fc-a5c0-3abd2fd898df",
+                "request_id": "f08c4146-79db-4735-ac01-5fdd2aa3fd07",
+                "method": "GET",
+                "resource": "profile",
+                "owner": "alice",
+                "subject": "bob"
+              }
+            ]
+          },
+          {
+            "component": "native_deny",
+            "status": "VERIFIED_PASS",
+            "evidence": [
+              {
+                "component": "profile",
+                "attempt_id": "3c04c17a-a8b2-40fc-a5c0-3abd2fd898df",
+                "request_id": "f08c4146-79db-4735-ac01-5fdd2aa3fd07",
+                "path": "/api/profile/alice",
+                "method": "GET",
+                "response_code": 200,
+                "response_code_details": "via_upstream",
+                "downstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/frontend",
+                "upstream_peer": null,
+                "downstream_tls": "TLSv1.3",
+                "upstream_tls": null
+              }
+            ]
+          },
+          {
+            "component": "native_allow",
+            "status": "VERIFIED_PASS",
+            "evidence": [
+              {
+                "component": "profile",
+                "attempt_id": "3c04c17a-a8b2-40fc-a5c0-3abd2fd898df",
+                "request_id": "f08c4146-79db-4735-ac01-5fdd2aa3fd07",
+                "path": "/api/profile/alice",
+                "method": "GET",
+                "response_code": 200,
+                "response_code_details": "via_upstream",
+                "downstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/frontend",
+                "upstream_peer": null,
+                "downstream_tls": "TLSv1.3",
+                "upstream_tls": null
+              }
+            ]
+          }
+        ],
+        "responses": [
+          {
+            "status": 200,
+            "data": {
+              "resource": "profile",
+              "subject": "alice",
+              "role": "employee",
+              "synthetic": true
+            },
+            "text": "{\"resource\":\"profile\",\"subject\":\"alice\",\"role\":\"employee\",\"synthetic\":true}"
+          }
+        ],
+        "observed_at": "2026-10-26T13:37:19.838423+00:00",
+        "execution_query_observed": true,
+        "execution_count": 1,
+        "denial_point": null,
+        "reason": null
+      }
+    },
+    {
+      "name": "Journal queried for 3c04c17a-a8b2-40fc-a5c0-3abd2fd898df",
+      "passed": true
+    },
+    {
+      "name": "bob salary carol",
+      "passed": true,
+      "evidence": {
+        "attempt_id": "2a327e3c-dfb6-4913-a301-920ec4018d0b",
+        "request_id": "165ae191-3aa8-4c63-a2d2-c6c7e85e209f",
+        "subject": "bob",
+        "request": {
+          "resource": "salary",
+          "owner": "carol",
+          "method": "GET"
+        },
+        "stages": [
+          {
+            "component": "identity",
+            "status": "VERIFIED_PASS",
+            "evidence": [
+              {
+                "source": "Identity introspection after verified WebAuthn",
+                "subject": "bob"
+              }
+            ]
+          },
+          {
+            "component": "pa_session",
+            "status": "VERIFIED_PASS",
+            "evidence": [
+              {
+                "status": 200,
+                "source": "PA exchange revalidated the cached device-bound Session"
+              }
+            ]
+          },
+          {
+            "component": "token_exchange",
+            "status": "VERIFIED_PASS",
+            "evidence": [
+              {
+                "status": 200,
+                "source": "Device mTLS gateway / PA exchange response"
+              }
+            ]
+          },
+          {
+            "component": "device-gateway",
+            "status": "VERIFIED_PASS",
+            "evidence": [
+              {
+                "component": "device-gateway",
+                "attempt_id": "2a327e3c-dfb6-4913-a301-920ec4018d0b",
+                "request_id": "a9c00222-ddae-4d58-8ec7-05eeaf432861",
+                "path": "/api/salary/carol",
+                "method": "GET",
+                "response_code": 403,
+                "response_code_details": "via_upstream",
+                "downstream_peer": "urn:zta:device:device-a",
+                "upstream_peer": null,
+                "downstream_tls": "TLSv1.3",
+                "upstream_tls": null
+              }
+            ]
+          },
+          {
+            "component": "frontend",
+            "status": "VERIFIED_PASS",
+            "evidence": [
+              {
+                "component": "frontend",
+                "attempt_id": "2a327e3c-dfb6-4913-a301-920ec4018d0b",
+                "request_id": "a9c00222-ddae-4d58-8ec7-05eeaf432861",
+                "path": "/api/salary/carol",
+                "method": "GET",
+                "response_code": 403,
+                "response_code_details": "via_upstream",
+                "downstream_peer": null,
+                "upstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/salary",
+                "downstream_tls": null,
+                "upstream_tls": "TLSv1.3"
+              },
+              {
+                "component": "frontend",
+                "attempt_id": "2a327e3c-dfb6-4913-a301-920ec4018d0b",
+                "request_id": "a9c00222-ddae-4d58-8ec7-05eeaf432861",
+                "path": "/api/salary/carol",
+                "method": "GET",
+                "response_code": 403,
+                "response_code_details": "via_upstream",
+                "downstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/device-gateway",
+                "upstream_peer": null,
+                "downstream_tls": "TLSv1.3",
+                "upstream_tls": null
+              }
+            ]
+          },
+          {
+            "component": "salary",
+            "status": "VERIFIED_BLOCK",
+            "evidence": [
+              {
+                "component": "salary",
+                "attempt_id": "2a327e3c-dfb6-4913-a301-920ec4018d0b",
+                "request_id": "a9c00222-ddae-4d58-8ec7-05eeaf432861",
+                "path": "/api/salary/carol",
+                "method": "GET",
+                "response_code": 403,
+                "response_code_details": "ext_authz_denied",
+                "downstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/frontend",
+                "upstream_peer": null,
+                "downstream_tls": "TLSv1.3",
+                "upstream_tls": null
+              }
+            ]
+          },
+          {
+            "component": "profile",
+            "status": "NOT_OBSERVED",
+            "evidence": []
+          },
+          {
+            "component": "external_pe",
+            "status": "VERIFIED_BLOCK",
+            "evidence": [
+              {
+                "attempt_id": "2a327e3c-dfb6-4913-a301-920ec4018d0b",
+                "request_id": "a9c00222-ddae-4d58-8ec7-05eeaf432861",
+                "decision": "DENY",
+                "reason": "resource_ownership_denied",
+                "path": "/api/salary/carol",
+                "method": "GET",
+                "source": "spiffe://cluster.local/ns/zta-identity/sa/frontend"
+              }
+            ]
+          },
+          {
+            "component": "resource",
+            "status": "NOT_REACHED",
+            "evidence": []
+          },
+          {
+            "component": "native_deny",
+            "status": "NOT_OBSERVED",
+            "evidence": []
+          },
+          {
+            "component": "native_allow",
+            "status": "NOT_OBSERVED",
+            "evidence": []
+          }
+        ],
+        "responses": [
+          {
+            "status": 403,
+            "data": null,
+            "text": ""
+          }
+        ],
+        "observed_at": "2026-10-26T13:37:29.720076+00:00",
+        "execution_query_observed": true,
+        "execution_count": 0,
+        "denial_point": "external_pe",
+        "reason": "resource_ownership_denied"
+      }
+    },
+    {
+      "name": "Journal queried for 2a327e3c-dfb6-4913-a301-920ec4018d0b",
+      "passed": true
+    },
+    {
+      "name": "CUSTOM denial and Native ALLOW unobserved",
+      "passed": true
+    },
+    {
+      "name": "bob profile carol",
+      "passed": true,
+      "evidence": {
+        "attempt_id": "01ee16f6-4ed1-4683-9cea-b7310fdbb116",
+        "request_id": "4399e84c-90c4-410a-bace-3cc57843aee2",
+        "subject": "bob",
+        "request": {
+          "resource": "profile",
+          "owner": "carol",
+          "method": "GET"
+        },
+        "stages": [
+          {
+            "component": "identity",
+            "status": "VERIFIED_PASS",
+            "evidence": [
+              {
+                "source": "Identity introspection after verified WebAuthn",
+                "subject": "bob"
+              }
+            ]
+          },
+          {
+            "component": "pa_session",
+            "status": "VERIFIED_PASS",
+            "evidence": [
+              {
+                "status": 200,
+                "source": "PA exchange revalidated the cached device-bound Session"
+              }
+            ]
+          },
+          {
+            "component": "token_exchange",
+            "status": "VERIFIED_PASS",
+            "evidence": [
+              {
+                "status": 200,
+                "source": "Device mTLS gateway / PA exchange response"
+              }
+            ]
+          },
+          {
+            "component": "device-gateway",
+            "status": "VERIFIED_PASS",
+            "evidence": [
+              {
+                "component": "device-gateway",
+                "attempt_id": "01ee16f6-4ed1-4683-9cea-b7310fdbb116",
+                "request_id": "cfd5f79d-3d77-4b39-9423-e2367742330e",
+                "path": "/api/profile/carol",
+                "method": "GET",
+                "response_code": 403,
+                "response_code_details": "via_upstream",
+                "downstream_peer": "urn:zta:device:device-a",
+                "upstream_peer": null,
+                "downstream_tls": "TLSv1.3",
+                "upstream_tls": null
+              }
+            ]
+          },
+          {
+            "component": "frontend",
+            "status": "VERIFIED_PASS",
+            "evidence": [
+              {
+                "component": "frontend",
+                "attempt_id": "01ee16f6-4ed1-4683-9cea-b7310fdbb116",
+                "request_id": "cfd5f79d-3d77-4b39-9423-e2367742330e",
+                "path": "/api/profile/carol",
+                "method": "GET",
+                "response_code": 403,
+                "response_code_details": "via_upstream",
+                "downstream_peer": null,
+                "upstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/profile",
+                "downstream_tls": null,
+                "upstream_tls": "TLSv1.3"
+              },
+              {
+                "component": "frontend",
+                "attempt_id": "01ee16f6-4ed1-4683-9cea-b7310fdbb116",
+                "request_id": "cfd5f79d-3d77-4b39-9423-e2367742330e",
+                "path": "/api/profile/carol",
+                "method": "GET",
+                "response_code": 403,
+                "response_code_details": "via_upstream",
+                "downstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/device-gateway",
+                "upstream_peer": null,
+                "downstream_tls": "TLSv1.3",
+                "upstream_tls": null
+              }
+            ]
+          },
+          {
+            "component": "salary",
+            "status": "NOT_OBSERVED",
+            "evidence": []
+          },
+          {
+            "component": "profile",
+            "status": "VERIFIED_BLOCK",
+            "evidence": [
+              {
+                "component": "profile",
+                "attempt_id": "01ee16f6-4ed1-4683-9cea-b7310fdbb116",
+                "request_id": "cfd5f79d-3d77-4b39-9423-e2367742330e",
+                "path": "/api/profile/carol",
+                "method": "GET",
+                "response_code": 403,
+                "response_code_details": "ext_authz_denied",
+                "downstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/frontend",
+                "upstream_peer": null,
+                "downstream_tls": "TLSv1.3",
+                "upstream_tls": null
+              }
+            ]
+          },
+          {
+            "component": "external_pe",
+            "status": "VERIFIED_BLOCK",
+            "evidence": [
+              {
+                "attempt_id": "01ee16f6-4ed1-4683-9cea-b7310fdbb116",
+                "request_id": "cfd5f79d-3d77-4b39-9423-e2367742330e",
+                "decision": "DENY",
+                "reason": "resource_ownership_denied",
+                "path": "/api/profile/carol",
+                "method": "GET",
+                "source": "spiffe://cluster.local/ns/zta-identity/sa/frontend"
+              }
+            ]
+          },
+          {
+            "component": "resource",
+            "status": "NOT_REACHED",
+            "evidence": []
+          },
+          {
+            "component": "native_deny",
+            "status": "NOT_OBSERVED",
+            "evidence": []
+          },
+          {
+            "component": "native_allow",
+            "status": "NOT_OBSERVED",
+            "evidence": []
+          }
+        ],
+        "responses": [
+          {
+            "status": 403,
+            "data": null,
+            "text": ""
+          }
+        ],
+        "observed_at": "2026-10-26T13:37:39.741239+00:00",
+        "execution_query_observed": true,
+        "execution_count": 0,
+        "denial_point": "external_pe",
+        "reason": "resource_ownership_denied"
+      }
+    },
+    {
+      "name": "Journal queried for 01ee16f6-4ed1-4683-9cea-b7310fdbb116",
+      "passed": true
+    },
+    {
+      "name": "CUSTOM denial and Native ALLOW unobserved",
+      "passed": true
+    },
+    {
+      "name": "Both employee snapshots retained",
+      "passed": true
+    },
+    {
+      "name": "Employee denied /api/console/session",
+      "passed": true
+    },
+    {
+      "name": "Employee denied /api/inspector/status",
+      "passed": true
+    },
+    {
+      "name": "Employee denied /api/inspector/invite",
+      "passed": true
+    },
+    {
+      "name": "Employee denied /api/inspector/recover",
+      "passed": true
+    },
+    {
+      "name": "Employee denied /api/inspector/experiments",
+      "passed": true
+    }
+  ],
+  "authenticator": "software test authenticator; real WebAuthn server verification",
+  "snapshots": {
+    "alice": {
+      "attempt_id": "13ddf371-8edf-4bff-a4bc-a2dcf2971047",
+      "request_id": "1fb5b974-74ad-4049-b7da-ffaa2c0019aa",
+      "subject": "alice",
+      "request": {
+        "resource": "profile",
+        "owner": "carol",
+        "method": "GET"
+      },
+      "stages": [
+        {
+          "component": "identity",
+          "status": "VERIFIED_PASS",
+          "evidence": [
+            {
+              "source": "Identity introspection after verified WebAuthn",
+              "subject": "alice"
+            }
+          ]
+        },
+        {
+          "component": "pa_session",
+          "status": "VERIFIED_PASS",
+          "evidence": [
+            {
+              "status": 200,
+              "source": "PA exchange revalidated the cached device-bound Session"
+            }
+          ]
+        },
+        {
+          "component": "token_exchange",
+          "status": "VERIFIED_PASS",
+          "evidence": [
+            {
+              "status": 200,
+              "source": "Device mTLS gateway / PA exchange response"
+            }
+          ]
+        },
+        {
+          "component": "device-gateway",
+          "status": "NOT_OBSERVED",
+          "evidence": []
+        },
+        {
+          "component": "frontend",
+          "status": "VERIFIED_PASS",
+          "evidence": [
+            {
+              "component": "frontend",
+              "attempt_id": "13ddf371-8edf-4bff-a4bc-a2dcf2971047",
+              "request_id": "702b48c8-3ca6-47d1-a298-ea57ebca693b",
+              "path": "/api/profile/carol",
+              "method": "GET",
+              "response_code": 403,
+              "response_code_details": "via_upstream",
+              "downstream_peer": null,
+              "upstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/profile",
+              "downstream_tls": null,
+              "upstream_tls": "TLSv1.3"
+            },
+            {
+              "component": "frontend",
+              "attempt_id": "13ddf371-8edf-4bff-a4bc-a2dcf2971047",
+              "request_id": "702b48c8-3ca6-47d1-a298-ea57ebca693b",
+              "path": "/api/profile/carol",
+              "method": "GET",
+              "response_code": 403,
+              "response_code_details": "via_upstream",
+              "downstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/device-gateway",
+              "upstream_peer": null,
+              "downstream_tls": "TLSv1.3",
+              "upstream_tls": null
+            }
+          ]
+        },
+        {
+          "component": "salary",
+          "status": "NOT_OBSERVED",
+          "evidence": []
+        },
+        {
+          "component": "profile",
+          "status": "VERIFIED_BLOCK",
+          "evidence": [
+            {
+              "component": "profile",
+              "attempt_id": "13ddf371-8edf-4bff-a4bc-a2dcf2971047",
+              "request_id": "702b48c8-3ca6-47d1-a298-ea57ebca693b",
+              "path": "/api/profile/carol",
+              "method": "GET",
+              "response_code": 403,
+              "response_code_details": "ext_authz_denied",
+              "downstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/frontend",
+              "upstream_peer": null,
+              "downstream_tls": "TLSv1.3",
+              "upstream_tls": null
+            }
+          ]
+        },
+        {
+          "component": "external_pe",
+          "status": "VERIFIED_BLOCK",
+          "evidence": [
+            {
+              "attempt_id": "13ddf371-8edf-4bff-a4bc-a2dcf2971047",
+              "request_id": "702b48c8-3ca6-47d1-a298-ea57ebca693b",
+              "decision": "DENY",
+              "reason": "resource_ownership_denied",
+              "path": "/api/profile/carol",
+              "method": "GET",
+              "source": "spiffe://cluster.local/ns/zta-identity/sa/frontend"
+            }
+          ]
+        },
+        {
+          "component": "resource",
+          "status": "NOT_REACHED",
+          "evidence": []
+        },
+        {
+          "component": "native_deny",
+          "status": "NOT_OBSERVED",
+          "evidence": []
+        },
+        {
+          "component": "native_allow",
+          "status": "NOT_OBSERVED",
+          "evidence": []
+        }
+      ],
+      "responses": [
+        {
+          "status": 403
+        }
+      ],
+      "observed_at": "2026-10-26T13:36:37.357911+00:00",
+      "execution_query_observed": true,
+      "execution_count": 0,
+      "denial_point": "external_pe",
+      "reason": "resource_ownership_denied"
+    },
+    "bob": {
+      "attempt_id": "01ee16f6-4ed1-4683-9cea-b7310fdbb116",
+      "request_id": "4399e84c-90c4-410a-bace-3cc57843aee2",
+      "subject": "bob",
+      "request": {
+        "resource": "profile",
+        "owner": "carol",
+        "method": "GET"
+      },
+      "stages": [
+        {
+          "component": "identity",
+          "status": "VERIFIED_PASS",
+          "evidence": [
+            {
+              "source": "Identity introspection after verified WebAuthn",
+              "subject": "bob"
+            }
+          ]
+        },
+        {
+          "component": "pa_session",
+          "status": "VERIFIED_PASS",
+          "evidence": [
+            {
+              "status": 200,
+              "source": "PA exchange revalidated the cached device-bound Session"
+            }
+          ]
+        },
+        {
+          "component": "token_exchange",
+          "status": "VERIFIED_PASS",
+          "evidence": [
+            {
+              "status": 200,
+              "source": "Device mTLS gateway / PA exchange response"
+            }
+          ]
+        },
+        {
+          "component": "device-gateway",
+          "status": "VERIFIED_PASS",
+          "evidence": [
+            {
+              "component": "device-gateway",
+              "attempt_id": "01ee16f6-4ed1-4683-9cea-b7310fdbb116",
+              "request_id": "cfd5f79d-3d77-4b39-9423-e2367742330e",
+              "path": "/api/profile/carol",
+              "method": "GET",
+              "response_code": 403,
+              "response_code_details": "via_upstream",
+              "downstream_peer": "urn:zta:device:device-a",
+              "upstream_peer": null,
+              "downstream_tls": "TLSv1.3",
+              "upstream_tls": null
+            }
+          ]
+        },
+        {
+          "component": "frontend",
+          "status": "VERIFIED_PASS",
+          "evidence": [
+            {
+              "component": "frontend",
+              "attempt_id": "01ee16f6-4ed1-4683-9cea-b7310fdbb116",
+              "request_id": "cfd5f79d-3d77-4b39-9423-e2367742330e",
+              "path": "/api/profile/carol",
+              "method": "GET",
+              "response_code": 403,
+              "response_code_details": "via_upstream",
+              "downstream_peer": null,
+              "upstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/profile",
+              "downstream_tls": null,
+              "upstream_tls": "TLSv1.3"
+            },
+            {
+              "component": "frontend",
+              "attempt_id": "01ee16f6-4ed1-4683-9cea-b7310fdbb116",
+              "request_id": "cfd5f79d-3d77-4b39-9423-e2367742330e",
+              "path": "/api/profile/carol",
+              "method": "GET",
+              "response_code": 403,
+              "response_code_details": "via_upstream",
+              "downstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/device-gateway",
+              "upstream_peer": null,
+              "downstream_tls": "TLSv1.3",
+              "upstream_tls": null
+            }
+          ]
+        },
+        {
+          "component": "salary",
+          "status": "NOT_OBSERVED",
+          "evidence": []
+        },
+        {
+          "component": "profile",
+          "status": "VERIFIED_BLOCK",
+          "evidence": [
+            {
+              "component": "profile",
+              "attempt_id": "01ee16f6-4ed1-4683-9cea-b7310fdbb116",
+              "request_id": "cfd5f79d-3d77-4b39-9423-e2367742330e",
+              "path": "/api/profile/carol",
+              "method": "GET",
+              "response_code": 403,
+              "response_code_details": "ext_authz_denied",
+              "downstream_peer": "spiffe://cluster.local/ns/zta-identity/sa/frontend",
+              "upstream_peer": null,
+              "downstream_tls": "TLSv1.3",
+              "upstream_tls": null
+            }
+          ]
+        },
+        {
+          "component": "external_pe",
+          "status": "VERIFIED_BLOCK",
+          "evidence": [
+            {
+              "attempt_id": "01ee16f6-4ed1-4683-9cea-b7310fdbb116",
+              "request_id": "cfd5f79d-3d77-4b39-9423-e2367742330e",
+              "decision": "DENY",
+              "reason": "resource_ownership_denied",
+              "path": "/api/profile/carol",
+              "method": "GET",
+              "source": "spiffe://cluster.local/ns/zta-identity/sa/frontend"
+            }
+          ]
+        },
+        {
+          "component": "resource",
+          "status": "NOT_REACHED",
+          "evidence": []
+        },
+        {
+          "component": "native_deny",
+          "status": "NOT_OBSERVED",
+          "evidence": []
+        },
+        {
+          "component": "native_allow",
+          "status": "NOT_OBSERVED",
+          "evidence": []
+        }
+      ],
+      "responses": [
+        {
+          "status": 403
+        }
+      ],
+      "observed_at": "2026-10-26T13:37:39.741239+00:00",
+      "execution_query_observed": true,
+      "execution_count": 0,
+      "denial_point": "external_pe",
+      "reason": "resource_ownership_denied"
+    }
+  },
+  "finished_at": "2026-10-26T13:37:39.835901+00:00"
+}

@@ -14,7 +14,8 @@ def client(monkeypatch):
 
 
 def headers(client):
-    return {'x-mesh-console': client.get('/api/console/session').json()['token']}
+    key = {'x-operator-key': client.app.state.operator_key}
+    return {**key, 'x-mesh-console': client.get('/api/console/session', headers=key).json()['token']}
 
 
 def test_local_operator_boundary_and_resource_allowlist(client):
@@ -29,7 +30,7 @@ def test_local_operator_boundary_and_resource_allowlist(client):
 def test_job_result_never_echoes_bearer_token(client):
     job = client.post('/api/inspector/experiments', json={'token': 'secret-test-token'}, headers=headers(client)).json()
     for _ in range(50):
-        result = client.get('/api/inspector/jobs/'+job['id'])
+        result = client.get('/api/inspector/jobs/'+job['id'], headers=headers(client))
         if result.json()['state'] != 'running':
             break
         time.sleep(.01)
@@ -38,7 +39,7 @@ def test_job_result_never_echoes_bearer_token(client):
 
 
 def test_html_defaults_to_demo_and_provides_unknown_states(client):
-    html = client.get('/')
+    html = client.get('/inspector')
     assert 'Zero Trust Security Inspector' in html.text
     assert 'id="inspector-panel" hidden' in html.text
     assert 'NOT_OBSERVED / UNKNOWN' in html.text
@@ -61,4 +62,4 @@ def test_missing_jwt_experiment_omits_empty_authorization_header(monkeypatch):
 
 
 def test_evidence_reread_accepts_only_attempt_identifiers(client):
-    assert client.get('/api/inspector/evidence/invalid-id').status_code == 400
+    assert client.get('/api/inspector/evidence/invalid-id', headers=headers(client)).status_code == 400

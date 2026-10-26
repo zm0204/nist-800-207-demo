@@ -1,5 +1,7 @@
 # NIST SP 800-207 Zero Trust Architecture Demo
 
+**新版員工服務與雙人監控（獨立 P0 環境）**：開啟 [員工服務](http://localhost:18091/portal) 或 [存取監控](http://localhost:18091/observer)。真正 Passkey → Device mTLS → PA Session → JWT → Salary／Profile，管理 API 使用獨立本機授權。保留 `/inspector` 回退入口。[啟動、Passkey 新增、UI/API contract 與驗收方式](docs/employee-portal.md)。
+
 以 **SP 800-207 本身**為藍本的 Device Agent/Gateway 展示。Human 用 Passkey/WebAuthn、Device 用 X.509/mTLS；PDP = 分開的 PE + PA，Envoy 是 gateway PEP。
 
 207A 已擴充為 **[Identity-Aware Zero Trust Security Inspector](docs/identity-inspector.md)**：真正 Passkey / Device mTLS / PA Session 交換短效 JWT，串接 Istio SPIFFE Workload Identity、接收端 JWT 驗證、External PE 資源授權、行為隔離與真實執行證據。部署使用獨立 `kind-zta-identity`；原 207 Compose、憑證、Session 與資料不變。Phase 2 / Multi-Location 尚未實作。

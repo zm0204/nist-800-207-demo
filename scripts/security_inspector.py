@@ -25,6 +25,8 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from scripts.identity_deploy import k, tool, NS, CONTEXT, KUBECONFIG, STATE
 from app.inspection import inspect_attempt
+IDENTITY_PORT = int(os.environ.get('ZTA_IDENTITY_PORT', '18082'))
+GATEWAY_PORT = int(os.environ.get('ZTA_GATEWAY_PORT', '18443'))
 
 PROBE = """import json,sys,httpx
 p=json.load(sys.stdin)
@@ -79,7 +81,7 @@ def forwards():
         last = 'Identity or verified device TLS unavailable'
         while True:
             try:
-                if identity_ready(18082) and gateway_ready(18443):
+                if identity_ready(IDENTITY_PORT) and gateway_ready(GATEWAY_PORT):
                     return
             except (httpx.TransportError, OSError) as error:
                 last = type(error).__name__
@@ -89,7 +91,7 @@ def forwards():
             # Retry only readiness, never an application POST or security test.
             threading.Event().wait(min(.1, remaining))
     try:
-        reusable = identity_ready(18082) and gateway_ready(18443)
+        reusable = identity_ready(IDENTITY_PORT) and gateway_ready(GATEWAY_PORT)
     except (httpx.TransportError, OSError):
         reusable = False
     if reusable:
@@ -98,8 +100,8 @@ def forwards():
     processes = []
     stop = threading.Event()
     watcher = None
-    specifications = [('identity', 18082, 8000, identity_ready),
-                      ('device-gateway', 18443, 8443, gateway_ready)]
+    specifications = [('identity', IDENTITY_PORT, 8000, identity_ready),
+                      ('device-gateway', GATEWAY_PORT, 8443, gateway_ready)]
     def start_forward(specification):
         service, local, remote, probe = specification
         if stop.is_set():
@@ -133,6 +135,10 @@ def forwards():
 
 class SecurityOperator:
     recovery_required = False
+    def identity(self, operation, body):
+        with httpx.Client(trust_env=False, timeout=10) as client:
+            return client.post(f'http://127.0.0.1:{IDENTITY_PORT}/'+operation, json=body)
+
     def control(self, service, path, method='GET', body=None):
         return json.loads(k('exec', '-i', 'deployment/'+service, '-c', 'app', '--', 'python', '-c', CONTROL,
                             data=json.dumps({'path': path, 'method': method, 'body': body}), quiet=True))
@@ -141,7 +147,7 @@ class SecurityOperator:
         tls = ssl.create_default_context(cafile=str(STATE/'certs/service-ca.crt'))
         tls.load_cert_chain(STATE/'certs/device-a.crt', STATE/'certs/device-a.key')
         with httpx.Client(verify=tls, trust_env=False, timeout=15) as client:
-            r = client.request(method, 'https://localhost:18443'+path, json=body,
+            r = client.request(method, f'https://localhost:{GATEWAY_PORT}'+path, json=body,
                                headers=headers if headers is not None else ({'authorization': 'Bearer '+token} if token else {}))
         return r
 
@@ -215,10 +221,10 @@ class SecurityOperator:
             executions = None
         return inspect_attempt(attempt, events, logs, executions)
 
-    def perform(self, spec):
+    def perform(self, spec, *, attempt_id=None, request_id=None):
         if self.recovery_required:
             raise RuntimeError('Recovery required before further experiments')
-        attempt, request_id = str(uuid4()), str(uuid4())
+        attempt, request_id = attempt_id or str(uuid4()), request_id or str(uuid4())
         path = '/api/'+spec.resource+'/'+spec.owner+('/adjust' if spec.operation == 'adjust' else '')
         headers = {'x-attempt-id': attempt, 'x-request-id': request_id}
         if spec.token:
@@ -244,7 +250,7 @@ class SecurityOperator:
                 k('scale', 'deployment/'+fault_target, '--replicas=0', quiet=True)
                 k('wait', '--for=delete', 'pod', '-l', 'app='+fault_target, '--timeout=60s', quiet=True)
             def send(_):
-                request_headers = {**headers, 'x-request-id': str(uuid4())}
+                request_headers = {**headers, 'x-request-id': request_id if count == 1 else str(uuid4())}
                 payload = {'method': method, 'url': 'http://frontend:8000'+path, 'headers': request_headers, 'body': body}
                 caller = 'probe'
                 if spec.attack in ('intruder', 'forged-headers', 'plaintext'):
@@ -257,7 +263,10 @@ class SecurityOperator:
                     response = json.loads(k('exec', '-i', 'deployment/'+caller, '-c', 'app', '--', 'python', '-c', PROBE,
                                            data=json.dumps(payload), quiet=True))
                 else:
-                    r = self.agent(path, body, None, method, request_headers)
+                    try:
+                        r = self.agent(path, body, None, method, request_headers)
+                    except httpx.TransportError as error:
+                        return {'status': 0, 'error': type(error).__name__}
                     try:
                         data = r.json()
                     except ValueError:
@@ -282,8 +291,10 @@ class SecurityOperator:
             if spec.attack in ('intruder', 'forged-headers', 'direct-frontend') else ('device-gateway',)
             if spec.attack in ('invalid-jwt', 'missing-jwt') else ('device-gateway', 'frontend', spec.resource))
         evidence = self.evidence(attempt, wait_for)
-        evidence.update(responses=responses, request={'resource': spec.resource, 'owner': spec.owner,
+        evidence.update(responses=responses, request_id=request_id, request={'resource': spec.resource, 'owner': spec.owner,
             'method': method, 'attack': spec.attack}, observed_at=datetime.now(timezone.utc).isoformat())
+        if any(r.get('error') for r in responses):
+            evidence['reason'] = next(r['error'] for r in responses if r.get('error'))
         return evidence
 
 
@@ -297,13 +308,16 @@ class Experiment(BaseModel):
     amount: int = 60000
 
 
-def create_app(operator):
-    app = FastAPI(title='Zero Trust Security Inspector', docs_url=None, redoc_url=None)
+def create_app(operator, *, operator_key=None):
+    app = FastAPI(title='Employee Portal', docs_url=None, redoc_url=None, openapi_url=None)
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=['localhost', '127.0.0.1', 'testserver'])
     csrf = secrets.token_urlsafe(32)
+    # Independent host-held authority. The publicly readable employee CSRF is not authorization.
+    app.state.operator_key = operator_key or secrets.token_urlsafe(48)
     lock = threading.Lock()
     executor = ThreadPoolExecutor(max_workers=1)
     jobs = {}
+    owners = {}
     active = {'id': None}
 
     @app.middleware('http')
@@ -311,8 +325,12 @@ def create_app(operator):
         origin = request.headers.get('origin')
         if origin and origin != 'http://'+request.headers.get('host', '') or request.headers.get('sec-fetch-site') == 'cross-site':
             return JSONResponse({'detail': 'same_origin_required'}, 403)
+        employee_api = request.url.path.startswith(('/api/portal/', '/api/observer/'))
+        if request.url.path.startswith('/api/') and not employee_api:
+            if not secrets.compare_digest(request.headers.get('x-operator-key', ''), app.state.operator_key):
+                return JSONResponse({'detail': 'operator_authorization_required'}, 403)
         if request.method not in ('GET', 'HEAD'):
-            if not secrets.compare_digest(request.headers.get('x-mesh-console', ''), csrf):
+            if not employee_api and not secrets.compare_digest(request.headers.get('x-mesh-console', ''), csrf):
                 return JSONResponse({'detail': 'local_operator_token_required'}, 403)
             if not request.headers.get('content-type', '').startswith('application/json'):
                 return JSONResponse({'detail': 'application_json_required'}, 415)
@@ -322,7 +340,20 @@ def create_app(operator):
         return response
 
     @app.get('/')
+    @app.get('/portal')
     def index():
+        return FileResponse(ROOT/'console/portal.html')
+
+    @app.get('/observer')
+    def observer():
+        return FileResponse(ROOT/'console/observer.html')
+
+    @app.get('/about')
+    def about():
+        return FileResponse(ROOT/'console/about.html')
+
+    @app.get('/inspector')
+    def inspector():
         return FileResponse(ROOT/'console/index.html')
     app.mount('/assets', StaticFiles(directory=ROOT/'console'))
 
@@ -354,8 +385,7 @@ def create_app(operator):
     def identity(operation: str, body: dict):
         if operation not in ('register/options', 'register/verify', 'login/options', 'login/verify'):
             raise HTTPException(404)
-        with httpx.Client(trust_env=False, timeout=10) as client:
-            r = client.post('http://127.0.0.1:18082/'+operation, json=body)
+        r = operator.identity(operation, body)
         return JSONResponse(r.json(), r.status_code)
 
     @app.post('/api/inspector/invite')
@@ -391,14 +421,38 @@ def create_app(operator):
                 raise HTTPException(404)
             return jobs[job_id]
 
-    def finish(job_id, body):
+    def finish(job_id, action):
         try:
-            value = {'state': 'done', 'result': operator.perform(body)}
+            value = {'state': 'done', 'result': action()}
         except Exception:
             value = {'state': 'error', 'error': '操作未完成；沒有驗證結果。請檢查隔離叢集與 PE 恢復狀態。'}
         with lock:
             jobs[job_id].update(value)
             active['id'] = None
+
+    def submit(action, *, owner=None, attempt_id=None):
+        with lock:
+            if active['id']:
+                raise HTTPException(409, 'experiment_in_progress')
+            job_id = str(uuid4())
+            jobs[job_id] = {'id': job_id, 'state': 'running', 'attempt_id': attempt_id}
+            owners[job_id] = owner
+            active['id'] = job_id
+            while len(jobs) > 30:
+                oldest = next(iter(jobs))
+                del jobs[oldest]
+                owners.pop(oldest, None)
+            executor.submit(finish, job_id, action)
+            return dict(jobs[job_id])
+
+    def employee_job(job_id, sid):
+        with lock:
+            if job_id not in jobs or owners.get(job_id) != sid:
+                raise HTTPException(404)
+            return dict(jobs[job_id])
+
+    from app.employee_portal import attach_portal
+    attach_portal(app, operator, submit, employee_job)
 
     @app.post('/api/inspector/experiments', status_code=202)
     def experiment(body: Experiment):
@@ -406,23 +460,24 @@ def create_app(operator):
             raise HTTPException(400, 'unsupported_resource_operation')
         if body.attack not in ('normal', 'intruder', 'forged-headers', 'invalid-jwt', 'missing-jwt', 'hr-burst', 'pe-outage', 'authz-outage', 'audit-outage', 'plaintext', 'direct-frontend'):
             raise HTTPException(400, 'unsupported_experiment')
-        with lock:
-            if active['id']:
-                raise HTTPException(409, 'experiment_in_progress')
-            job_id = str(uuid4())
-            jobs[job_id] = {'id': job_id, 'state': 'running'}
-            active['id'] = job_id
-            while len(jobs) > 30:
-                del jobs[next(iter(jobs))]
-            executor.submit(finish, job_id, body)
-            return jobs[job_id]
+        return submit(lambda: operator.perform(body))
 
     return app
 
 
 def main():
+    import argparse
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--port', type=int, default=18081)
+    args = parser.parse_args()
+    STATE.mkdir(parents=True, exist_ok=True)
+    key_path = STATE/'operator.key'
+    if not key_path.exists():
+        fd = os.open(key_path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+        with os.fdopen(fd, 'w') as stream:
+            stream.write(secrets.token_urlsafe(48))
     with forwards():
-        uvicorn.run(create_app(SecurityOperator()), host='127.0.0.1', port=18081, access_log=False)
+        uvicorn.run(create_app(SecurityOperator(), operator_key=key_path.read_text()), host='127.0.0.1', port=args.port, access_log=False)
 
 
 if __name__ == '__main__':

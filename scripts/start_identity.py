@@ -42,7 +42,7 @@ def main():
     url = 'http://localhost:18081'
     try:
         response = httpx.get(url, timeout=2, trust_env=False)
-        if 'Zero Trust Security Inspector' not in response.text:
+        if '員工服務' not in response.text:
             raise RuntimeError('Port 18081 belongs to another application; stop it before retrying')
         running = True
     except httpx.HTTPError:
@@ -67,7 +67,9 @@ def main():
             raise RuntimeError('Inspector not ready; inspect .tmp/identity/inspector.log')
     if not args.no_browser:
         webbrowser.open(url)
-    print('Security Inspector: '+url, flush=True)
+    print('Employee Portal: '+url+'/portal', flush=True)
+    print('Observer: '+url+'/observer', flush=True)
+    print('Authorized Inspector: python scripts/open_inspector.py', flush=True)
     print('Original 207 data preserved. Phase 2 / Multi-Location not implemented.', flush=True)
 
 
