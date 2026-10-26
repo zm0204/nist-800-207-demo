@@ -2,6 +2,8 @@ const $=id=>document.getElementById(id);
 const operatorKey=new URLSearchParams(location.hash.slice(1)).get('operator')||'';
 if(operatorKey)history.replaceState(null,'','/inspector');
 let csrf='',humanToken='',writeToken='',sessions={},busy=false,lastResult=null;
+let operatorAuthorized=!!operatorKey;
+const operatorHelp='此頁未取得本機管理員授權。請雙擊 scripts/register_portal_passkey.cmd 重新開啟，再選 Alice／Bob 註冊 Passkey。重新整理或直接貼上 Inspector 網址會失去此頁授權。';
 const dump=value=>JSON.stringify(value,null,2);
 const navigation=[...document.querySelectorAll('.rail nav a')];
 function selectNavigation(current){
@@ -37,7 +39,7 @@ window.addEventListener('resize',scheduleNavigation);
 syncNavigation();
 async function api(path,body,method=body===undefined?'GET':'POST'){
   const response=await fetch(path,{method,headers:{'Content-Type':'application/json','x-mesh-console':csrf,'x-operator-key':operatorKey},body:body===undefined?undefined:JSON.stringify(body)});
-  const data=await response.json();if(!response.ok)throw new Error(data.detail||dump(data));return data;
+  const data=await response.json();if(!response.ok){if(data.detail==='operator_authorization_required'){operatorAuthorized=false;throw new Error(operatorHelp);}throw new Error(data.detail||dump(data));}return data;
 }
 function error(message){$('error').textContent=message;$('error').hidden=!message;}
 const decode=s=>Uint8Array.from(atob(s.replace(/-/g,'+').replace(/_/g,'/')+'='.repeat((4-s.length%4)%4)),c=>c.charCodeAt(0));
@@ -71,7 +73,7 @@ async function credential(resource,scope,stepUpToken){
   $('jwt-expiry').textContent='已簽發 JWT · 有效 '+token.expires_in+' 秒';$('auth-state').textContent='SESSION + JWT';
   return token.access_token;
 }
-function action(id,fn){$(id).addEventListener('click',async()=>{if(busy)return;busy=true;error('');for(const el of document.querySelectorAll('button'))el.disabled=true;try{await fn();}catch(e){error(String(e.message));}finally{busy=false;for(const el of document.querySelectorAll('button'))el.disabled=false;}});}
+function action(id,fn){$(id).addEventListener('click',async()=>{if(busy||!operatorAuthorized)return;busy=true;error('');for(const el of document.querySelectorAll('button'))el.disabled=true;try{await fn();}catch(e){error(String(e.message));}finally{busy=false;for(const el of document.querySelectorAll('button'))el.disabled=!operatorAuthorized;}});}
 action('register',()=>passkey('register'));
 action('login',async()=>{await passkey('login');await credential($('resource').value);});
 action('step-up',async()=>{const fresh=await passkey('login');writeToken=await credential('salary','salary:write',fresh.token);$('auth-state').textContent='FRESH SALARY:WRITE';});
@@ -112,7 +114,12 @@ function mode(advanced){$('inspector-panel').hidden=!advanced;$('inspector-mode'
 $('demo-mode').onclick=()=>mode(false);$('inspector-mode').onclick=()=>mode(true);
 action('certificates',async()=>{$('public-certs').textContent=dump(await api('/api/inspector/certificates'));});
 async function refresh(){try{const status=await api('/api/inspector/status');const ready=(status.workloads||[]).filter(w=>w.ready===w.desired).length;$('connection').textContent=status.available?status.context+' · '+ready+'/'+status.workloads.length+' workloads ready':'隔離叢集未連線 · NOT_OBSERVED';$('status-dot').classList.toggle('online',status.available&&ready===status.workloads.length);$('policies').textContent=status.policies?dump(status.policies):'NOT_OBSERVED';}catch(e){$('connection').textContent='環境讀取失敗 · UNKNOWN';}}
-try{csrf=(await api('/api/console/session')).token;await refresh();}catch(e){error(e.message);}
-setInterval(refresh,15000);
+if(operatorKey){
+  try{csrf=(await api('/api/console/session')).token;await refresh();}catch(e){error(e.message);}
+  if(operatorAuthorized)setInterval(refresh,15000);
+}else{
+  error(operatorHelp);$('connection').textContent='請使用本機管理員入口開啟';
+  for(const id of ['register','login','step-up','recover','run','adjust','reread','certificates'])$(id).disabled=true;
+}
 
 action('recover',async()=>{await api('/api/inspector/recover',{subject:$('subject').value});$('auth-state').textContent='OPERATOR RISK RECOVERY';});

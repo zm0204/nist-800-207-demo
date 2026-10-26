@@ -16,6 +16,8 @@ RP ID 固定 `localhost`，新 Portal Origin 為 `http://localhost:18091`。新�
 
 每次按「註冊 Passkey」都由受權管理 API 建立五分鐘一次性邀請，Identity 再將它換成兩分鐘註冊 challenge；不需要手動複製邀請。若取消或逾時，重新按「註冊 Passkey」取得新邀請。不需刪除憑證或重設資料。重新整理 Inspector 後，本機管理憑證不留在網頁儲存空間，請重新雙擊啟動檔開啟。
 
+若畫面顯示「此頁未取得本機管理員授權」，表示尚未進入 WebAuthn／Google Password Manager 階段。請重新雙擊啟動檔，使用**新開啟的分頁**，再選 Bob。未授權頁現在會停用註冊與管理操作，並直接說明重新開啟的方式，不再只顯示 `operator_authorization_required`。
+
 Chrome 請使用你原本已登入 Google 帳號的正常個人資料視窗。Google 官方說明確認 Windows 版 Chrome 支援將 Passkey 存在 Google Password Manager；網站不能替使用者選取或解鎖密碼管理員。[Google 支援環境](https://developers.google.com/identity/passkeys/supported-environments)
 
 ## 保留與驗證
