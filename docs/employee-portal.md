@@ -72,6 +72,22 @@ Observer 將「Passkey 登入（先前完成）」與本次 Identity introspecti
 
 ## 驗證方式與限制
 
+### Inspector 的 Intruder 結果
+
+受權 Inspector 的「Intruder 持有同一顆合法 JWT，直接呼叫後端」實驗會寫入同一份 Observer 快取。分圖依據是相同 Attempt／資源路徑／方法的 PE Audit 中已驗證的 JWT Subject，不是資源擁有者、UI 選單或未驗證的 JWT 解碼。Actual Caller Workload 則取自 Envoy mTLS principal。沒有足夠身分證據或有衝突時，不覆寫 Alice／Bob 的既有結果。
+
+操作：用既有本機受權入口開啟 Inspector，選 Alice 並按「Passkey 登入」；資源選 Salary、擁有者 Alice、實驗選上述 Intruder，再按「發送請求」。開著 Observer 即可看到 Alice 圖在下次輪詢更新，Bob 保留。下一筆正常 Alice 請求可恢復正常路徑，不需要新增控制按鈕。
+
+Intruder 圖呈現 `Intruder → 接收端 Envoy Sidecar → Salary App`，不經 Gateway／Frontend。External PE 維持 ext_authz 分支；Native 授權仍在 Sidecar 內。若 Envoy 記錄 `rbac_access_denied_matched_policy[none]`，顯示原生授權拒絕紅線，不冒稱命中明確 DENY 規則；Native DENY 細項仍未觀測。點 Salary App 可查看真正的 Journal 查詢狀態及筆數。GET 不會顯示新執行的 Passkey ceremony。
+
+此整合只有管理員實驗執行後的 server-private callback，沒有公開事件寫入 API。Observer 仍只讀快取，不會額外呼叫 kubectl；公開結果不包含 JWT、human token、Session ID、原始 claims 或 operator key。
+
+2026-10-27 驗收：**174 項 Python、14 項 Node 測試通過**；[四種情境的真實證據](evidence/2026-10-27/inspector-observer-e2e.json)共 23 項檢查通過，包含 Alice 正常／越權、Intruder 持 Alice JWT、Bob 正常、正常 Alice 覆寫攻擊及公開 API 隔離。既有獨立測試憑證經真正 WebAuthn 簽章與 UV 驗證；本次不新註冊 Passkey、不寫入薪資、不修改風險或授權政策。
+
+```powershell
+..\zta-207a\.venv\Scripts\python.exe scripts/verify_inspector_observer.py
+```
+
 ```powershell
 ..\zta-207a\.venv\Scripts\python.exe -m pytest -q --basetemp=.tmp/portal-tests
 node --test tests/portal_ui.test.cjs

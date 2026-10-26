@@ -17,11 +17,19 @@ function el(name,attrs={},text){
 
 function openEvidence(subject,id){
   const result=results[subject],graph=observerModel(result);
-  const item=[...graph.authentication,...graph.mechanisms,graph.receiver,graph.pe,graph.resource,graph.gateway,graph.frontend].find(n=>n.id===id);
+  const item=[...graph.authentication,...graph.mechanisms,graph.receiver,graph.pe,graph.resource,graph.gateway,graph.frontend,graph.caller].find(n=>n?.id===id);
   $('evidence-title').textContent=(subject==='alice'?'Alice':'Bob')+' · '+item.label;
   $('evidence-status').textContent=statusLabels[item.status]||item.status;
   let evidence=item.evidence,context='';
   if(id==='identity')context='本次為 Identity introspection；Passkey 登入是在先前完成。';
+  if(id==='jwt_identity')context='JWT Subject 由 PE 驗證簽章後的 audit claims 確認；本次沒有重新執行 Passkey 登入。';
+  if(id==='intruder')context='Actual Caller Workload 取自 Envoy 驗證的 mTLS principal，不取自 JWT Subject 或偽造的身分標頭。';
+  if(id==='native_policy')context='接收端 Envoy 證實原生授權拒絕；此記錄未區分命中 DENY 或缺少 ALLOW。';
+  if(id==='resource'){
+    evidence=[{source:'Resource Execution Journal',query_observed:result?.execution_query_observed===true,
+      execution_count:result?.execution_count??null,executions:item.evidence||[]}];
+    context=result?.execution_query_observed?'已實際查詢本次 Attempt 的後端執行紀錄。':'Journal 查詢未觀測，不能宣稱 App 沒有執行。';
+  }
   if(id==='pa_session')context='Session 建立或由 PA exchange 重新驗證，請依下方來源判讀。';
   if(id==='step_up')context='敏感操作的獨立 Passkey 再驗證，與一般請求驗證分開。';
   if(id==='receiver'){
@@ -50,12 +58,13 @@ function edge(svg,subject,from,to,status,points,kind='data'){
 }
 
 function node(svg,subject,item,x,y,width=114,height=58,kind='service'){
+  const statusLabel=item.statusLabel||statusLabels[item.status]||item.status;
   const group=el('g',{class:'node '+kind,role:'button',tabindex:'0',
     'data-node':item.id,'data-parent':item.parent||'',
-    'aria-label':item.label+'，'+statusLabels[item.status]});
+    'aria-label':item.label+'，'+statusLabel});
   group.append(el('rect',{x:x-width/2,y:y-height/2,width,height,rx:kind==='control'?6:9}),
     el('text',{x,y:y-3},item.label),
-    el('text',{x,y:y+14,class:'node-status'},statusLabels[item.status]||item.status));
+    el('text',{x,y:y+14,class:'node-status'},statusLabel));
   group.addEventListener('click',()=>openEvidence(subject,item.id));
   group.addEventListener('keydown',event=>{
     if(event.key==='Enter'||event.key===' '){event.preventDefault();openEvidence(subject,item.id);}
@@ -65,7 +74,7 @@ function node(svg,subject,item,x,y,width=114,height=58,kind='service'){
 
 function diagram(subject,graph){
   const svg=el('svg',{viewBox:'0 0 640 405',class:'flow-svg',role:'img','aria-label':(subject==='alice'?'Alice':'Bob')+' 請求流程'});
-  svg.append(el('title',{},'資料路徑：Device Gateway → Frontend → 接收端 Envoy Sidecar → '+graph.resource.label+'。External PE 為 ext_authz 分支；Native AuthorizationPolicy 由 Sidecar 執行。'));
+  svg.append(el('title',{},'資料路徑：'+(graph.caller?'Intruder → ':'Device Gateway → Frontend → ')+'接收端 Envoy Sidecar → '+graph.resource.label+'。External PE 為 ext_authz 分支；Native AuthorizationPolicy 由 Sidecar 執行。'));
   const defs=el('defs');
   for(const [color,fill]of [['pass','#13745c'],['block','#c94747'],['unknown','#a9b3b1']]){
     const marker=el('marker',{id:'arrow-'+subject+'-'+color,viewBox:'0 0 10 10',refX:9,refY:5,
@@ -75,7 +84,7 @@ function diagram(subject,graph){
   svg.append(defs,el('text',{x:12,y:17,class:'section-label'},'本次身分與授權驗證'));
   const count=graph.authentication.length,width=count===4?138:160;
   const centers=count===4?[83,241,399,557]:[102,320,538];
-  edge(svg,subject,'login_context','identity',graph.authentication[0].status,
+  edge(svg,subject,'login_context',graph.authentication[0].id,graph.authentication[0].status,
     '3,57 '+(centers[0]-width/2)+',57','verification');
   graph.authentication.forEach((item,index)=>{
     if(index)edge(svg,subject,graph.authentication[index-1].id,item.id,item.status,
@@ -88,17 +97,24 @@ function diagram(subject,graph){
   // Receiving sidecar is the data-plane boundary; PE is an authorization branch.
   svg.append(el('rect',{x:315,y:145,width:175,height:232,rx:12,class:'sidecar-frame',
     'data-container':'receiver','aria-label':'接收端 Envoy Sidecar'}));
-  edge(svg,subject,'device-gateway','frontend',graph.dataEdges[0].status,'123,205 159,205');
-  edge(svg,subject,'frontend','receiver',graph.dataEdges[1].status,'277,205 332,205');
-  edge(svg,subject,'receiver','resource',graph.dataEdges[2].status,'472,325 532,325');
+  if(graph.caller){
+    edge(svg,subject,'intruder','receiver',graph.dataEdges[0].status,'277,205 332,205');
+  }else{
+    edge(svg,subject,'device-gateway','frontend',graph.dataEdges[0].status,'123,205 159,205');
+    edge(svg,subject,'frontend','receiver',graph.dataEdges[1].status,'277,205 332,205');
+  }
+  edge(svg,subject,'receiver','resource',graph.dataEdges.at(-1).status,'472,325 532,325');
   edge(svg,subject,'custom','external_pe',graph.authorizationEdges[0].status,'472,195 532,195','authorization');
   edge(svg,subject,'external_pe','custom',graph.authorizationEdges[1].status,'532,215 472,215','authorization');
   svg.append(el('text',{x:502,y:181,class:'branch-label'},'ext_authz'));
   edge(svg,subject,'custom','native_deny',graph.mechanisms[1].status,'402,227 402,243','mechanism');
-  edge(svg,subject,'native_deny','native_allow',graph.mechanisms[2].status,'402,287 402,303','mechanism');
+  edge(svg,subject,'native_deny',graph.mechanisms[2].id,graph.mechanisms[2].status,'402,287 402,303','mechanism');
 
-  node(svg,subject,graph.gateway,66,205);
-  node(svg,subject,graph.frontend,218,205,118);
+  if(graph.caller)node(svg,subject,graph.caller,188,205,178);
+  else{
+    node(svg,subject,graph.gateway,66,205);
+    node(svg,subject,graph.frontend,218,205,118);
+  }
   node(svg,subject,graph.receiver,402,166,169,34,'receiver-title');
   graph.mechanisms.forEach((item,index)=>node(svg,subject,item,402,205+index*60,140,44,'control'));
   node(svg,subject,graph.pe,582,205,100);
@@ -113,7 +129,7 @@ function draw(subject,result){
     title=document.createElement('h2'),role=document.createElement('p'),badge=document.createElement('span');
   avatar.className='avatar '+subject;avatar.textContent=subject==='alice'?'A':'B';
   who.className='who';title.textContent=subject==='alice'?'Alice':'Bob';
-  role.textContent=subject==='alice'?'員工':'人事管理';who.append(title,role);
+  role.textContent=graph.eventLabel||(subject==='alice'?'員工':'人事管理');who.append(title,role);
   const code=result?.responses?.[0]?.status;
   badge.className='status '+(code>=200&&code<300?'pass':code===401||code===403?'block':'unknown');
   badge.textContent=result?(code?'HTTP '+code:'連線失敗'):'等待請求';

@@ -1,5 +1,6 @@
 """Employee-only BFF and cache-only, secret-free request observer."""
 from datetime import datetime, timezone
+import re
 import secrets
 import threading
 import time
@@ -50,6 +51,7 @@ def public_attempt(result, subject):
                 'path', 'method', 'response_code', 'response_code_details',
                 'downstream_peer', 'upstream_peer', 'downstream_tls', 'upstream_tls',
                 'status', 'source', 'resource', 'owner', 'subject',
+                'destination', 'principal',
             ) if key in item})
         stages.append({'component': stage['component'], 'status': stage['status'], 'evidence': safe})
     # Native policies run after CUSTOM. Never turn a PE denial into native success.
@@ -75,13 +77,49 @@ def public_attempt(result, subject):
     if not reason and blocked:
         reason = next((e.get('reason') or e.get('response_code_details') for e in blocked['evidence']
                        if e.get('reason') or e.get('response_code_details')), None)
-    return {'attempt_id': result['attempt_id'], 'request_id': result.get('request_id'),
-        'subject': subject, 'request': result['request'], 'stages': stages,
+    value = {'attempt_id': result['attempt_id'], 'request_id': result.get('request_id'),
+        'subject': subject, 'request': {key: result['request'][key] for key in ('resource', 'owner', 'method', 'attack') if key in result['request']}, 'stages': stages,
         'responses': result.get('responses', []), 'observed_at': result.get('observed_at'),
         'execution_query_observed': result.get('execution_query_observed', False),
         'execution_count': len(result['executions']) if result.get('executions') is not None else None,
         'denial_point': result.get('denial_point') or (blocked['component'] if blocked else None),
         'reason': reason}
+    if result.get('origin') == 'inspector' and result.get('caller'):
+        value.update(origin='inspector', caller={key: result['caller'][key]
+                     for key in ('name', 'service_account', 'principal')})
+    return value
+
+
+def inspector_identity(result):
+    """Only PE's signature-verified claims and transport principal classify an attack.
+
+    This consumes server-collected evidence, never request body claims or decoded JWTs.
+    Correlation IDs alone do not establish a subject or workload identity.
+    """
+    request = result.get('request', {})
+    if request.get('attack') != 'intruder' or request.get('resource') not in ('salary', 'profile'):
+        return None
+    path = '/api/'+request['resource']+'/'+request.get('owner', '')
+    if request.get('method') == 'POST':
+        path += '/adjust'
+    audits = [e for s in result.get('stages', []) if s['component'] == 'external_pe'
+              for e in s.get('evidence') or []
+              if e.get('kind') == 'resource_pe_decision' and e.get('attempt_id') == result.get('attempt_id')
+              and e.get('path') == path and e.get('method') == request.get('method')
+              and e.get('decision') in ('ALLOW', 'DENY')]
+    if not audits:
+        return None
+    subjects = {e.get('claims', {}).get('sub') for e in audits}
+    sources = {e.get('source') for e in audits}
+    if len(subjects) != 1 or not subjects <= {'alice', 'bob'} or len(sources) != 1:
+        return None
+    principal = next(iter(sources))
+    if not isinstance(principal, str) or not re.fullmatch(r'spiffe://cluster\.local/ns/[a-z0-9-]+/sa/intruder', principal):
+        return None
+    destination = principal.rsplit('/', 1)[0]+'/'+request['resource']
+    if any(e.get('destination') != destination for e in audits):
+        return None
+    return next(iter(subjects)), {'name': 'intruder', 'service_account': 'intruder', 'principal': principal}
 
 
 def attach_portal(app, operator, submit, get_job):
@@ -89,6 +127,33 @@ def attach_portal(app, operator, submit, get_job):
     latest = {'alice': None, 'bob': None}
     lock = threading.RLock()
     public_csrf = secrets.token_urlsafe(32)  # CSRF only, grants no employee/admin identity.
+
+    def cache(safe):
+        with lock:
+            attempts[safe['attempt_id']] = safe
+            latest[safe['subject']] = safe
+            while len(attempts) > 90:
+                oldest = next(iter(attempts))
+                if any(v and v['attempt_id'] == oldest for v in latest.values()):
+                    attempts[oldest] = attempts.pop(oldest)
+                else:
+                    attempts.pop(oldest)
+        return safe
+
+    def publish_inspector(result):
+        identity = inspector_identity(result)
+        if identity is None:
+            return
+        subject, caller = identity
+        enriched = {**result, 'origin': 'inspector', 'caller': caller,
+            'stages': [*result['stages'],
+                {'component': 'jwt_identity', 'status': 'VERIFIED_PASS', 'evidence': [
+                    {'source': 'PE verified JWT claims', 'subject': subject}]},
+                {'component': 'caller_workload', 'status': 'VERIFIED_PASS', 'evidence': [
+                    {'source': 'PE audit / Envoy authenticated source principal', 'principal': caller['principal']}]}]}
+        safe = public_attempt(enriched, subject)
+        safe['responses'] = [{key: r[key] for key in ('status', 'error') if key in r} for r in safe['responses']]
+        cache(safe)
 
     def current(request, required=True):
         sid = request.cookies.get('employee_session', '')
@@ -277,17 +342,7 @@ def attach_portal(app, operator, submit, get_job):
         result.update(request={'resource': body.resource, 'owner': body.owner, 'method': 'POST' if operation == 'adjust' else 'GET'},
                       request_id=request_id, observed_at=datetime.now(timezone.utc).isoformat())
         result['stages'] = preliminary+result.get('stages', [])
-        safe = public_attempt(result, value['subject'])
-        with lock:
-            attempts[attempt] = safe
-            latest[value['subject']] = safe
-            while len(attempts) > 90:
-                oldest = next(iter(attempts))
-                if any(v and v['attempt_id'] == oldest for v in latest.values()):
-                    attempts[oldest] = attempts.pop(oldest)
-                else:
-                    attempts.pop(oldest)
-        return safe
+        return cache(public_attempt(result, value['subject']))
 
     @app.post('/api/portal/access', status_code=202)
     def access(body: Access, request: Request):
@@ -313,7 +368,7 @@ def attach_portal(app, operator, submit, get_job):
     @app.get('/api/observer/attempts')
     def summaries():
         with lock:
-            return {subject: ({key: value[key] for key in ('attempt_id', 'request_id', 'subject', 'request', 'observed_at', 'denial_point', 'reason')}
+            return {subject: ({key: value[key] for key in ('attempt_id', 'request_id', 'subject', 'request', 'observed_at', 'denial_point', 'reason', 'origin', 'caller') if key in value}
                               if value else None) for subject, value in latest.items()}
 
     @app.get('/api/observer/attempts/{attempt_id}')
@@ -324,3 +379,6 @@ def attach_portal(app, operator, submit, get_job):
             # Synthetic resource contents belong in the employee page, not public monitoring.
             return {**attempts[attempt_id], 'responses': [{key: r[key] for key in ('status', 'error') if key in r}
                                                        for r in attempts[attempt_id]['responses']]}
+
+    # Server-private hook; no HTTP mutation route exposes it to employees or Observer.
+    return publish_inspector

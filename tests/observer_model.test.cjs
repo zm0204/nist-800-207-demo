@@ -50,7 +50,9 @@ test('ambiguous native denial stays on sidecar without inventing which native ru
   attempt.stages[0].evidence=[{response_code_details:'rbac_access_denied_matched_policy[none]'}];
   const graph=observerModel(attempt);
   assert.equal(graph.receiver.status,'VERIFIED_BLOCK');
-  assert.ok(graph.mechanisms.filter(n=>n.id.startsWith('native_')).every(n=>n.status==='NOT_OBSERVED'));
+  assert.equal(graph.mechanisms.find(n=>n.id==='native_deny').status,'NOT_OBSERVED');
+  assert.equal(graph.mechanisms.find(n=>n.id==='native_policy').status,'VERIFIED_BLOCK');
+  assert.ok(!graph.mechanisms.some(n=>n.id==='native_allow'));
   assert.ok(graph.authorizationEdges.every(e=>e.status==='VERIFIED_PASS'));
 });
 
@@ -89,4 +91,25 @@ test('receiving proxy and PE success preserve the completed native checks and ac
   assert.ok(graph.authorizationEdges.every(e=>e.status==='VERIFIED_PASS'));
   assert.ok(graph.mechanisms.every(e=>e.status==='VERIFIED_PASS'));
   assert.equal(graph.dataEdges.at(-1).status,'VERIFIED_PASS');
+});
+
+test('Intruder uses the verified caller path and JWT identity without inventing a new login',async()=>{
+  const {observerModel}=await model();
+  const attempt=fixture([['jwt_identity','VERIFIED_PASS'],['caller_workload','VERIFIED_PASS'],['external_pe','VERIFIED_PASS'],['salary','VERIFIED_BLOCK'],['native_policy','VERIFIED_BLOCK'],['resource','NOT_REACHED']]);
+  attempt.subject='alice';attempt.origin='inspector';
+  attempt.caller={name:'intruder',service_account:'intruder',principal:'spiffe://cluster.local/ns/zta-identity/sa/intruder'};
+  attempt.stages.find(s=>s.component==='salary').evidence=[{response_code_details:'rbac_access_denied_matched_policy[none]'}];
+  const graph=observerModel(attempt);
+  assert.deepEqual(graph.dataEdges.map(e=>[e.from,e.to]),[['intruder','receiver'],['receiver','resource']]);
+  assert.equal(graph.caller.id,'intruder');
+  assert.equal(graph.authentication[0].label,'JWT 驗證');
+  assert.equal(graph.authentication[0].status,'VERIFIED_PASS');
+  assert.ok(!graph.authentication.some(n=>/Passkey|WebAuthn/.test(n.label)));
+  assert.equal(graph.eventLabel,'Intruder Workload · 使用 Alice JWT');
+  assert.match(graph.loginContext,/JWT Subject：Alice/);
+  assert.match(graph.loginContext,/Actual Caller Workload：Intruder.*sa\/intruder/);
+  assert.ok(graph.authorizationEdges.every(e=>e.status==='VERIFIED_PASS'));
+  assert.equal(graph.mechanisms.at(-1).id,'native_policy');
+  assert.equal(graph.mechanisms.at(-1).status,'VERIFIED_BLOCK');
+  assert.equal(graph.mechanisms.find(n=>n.id==='native_deny').status,'NOT_OBSERVED');
 });

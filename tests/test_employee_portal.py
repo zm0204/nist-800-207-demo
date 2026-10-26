@@ -307,3 +307,26 @@ def test_step_up_ceremony_cannot_be_replayed(portal):
     assert c.post('/api/portal/step-up/verify', json=body, headers=h).status_code == 200
     c.cookies.set('employee_step_up', nonce)
     assert c.post('/api/portal/step-up/verify', json=body, headers=h).status_code == 400
+
+
+def test_employee_request_replaces_own_intruder_snapshot_and_preserves_bob(portal, monkeypatch):
+    from tests.test_inspector_observer import evidence, perform
+    from app.inspection import inspect_attempt
+    c, op, identity = portal
+    monkeypatch.setattr(op, 'perform', lambda spec: evidence('bob-intruder', 'bob'))
+    perform(c)
+    bob = c.get('/api/observer/attempts').json()['bob']
+    monkeypatch.setattr(op, 'perform', lambda spec: evidence('alice-intruder'))
+    perform(c)
+    h = login(c, identity)
+    monkeypatch.setattr(op, 'agent', lambda path, *a, **k: httpx.Response(200, json={'session_id': 's'} if path == '/session' else {'access_token': 't'}))
+    def normal(spec, **ids):
+        raw = inspect_attempt(ids['attempt_id'], [], [], [{'subject': 'alice'}])
+        raw.update(responses=[{'status': 200}], request={'resource': 'salary', 'owner': 'alice', 'method': 'GET'})
+        return raw
+    monkeypatch.setattr(op, 'perform', normal)
+    latest = wait(c, c.post('/api/portal/access', json={'resource': 'salary', 'owner': 'alice'}, headers=h).json())
+    summary = c.get('/api/observer/attempts').json()
+    assert summary['alice']['attempt_id'] == latest['attempt_id']
+    assert 'origin' not in summary['alice'] and 'caller' not in summary['alice']
+    assert summary['bob'] == bob

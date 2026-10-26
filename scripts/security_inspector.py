@@ -452,7 +452,7 @@ def create_app(operator, *, operator_key=None):
             return dict(jobs[job_id])
 
     from app.employee_portal import attach_portal
-    attach_portal(app, operator, submit, employee_job)
+    publish_inspector = attach_portal(app, operator, submit, employee_job)
 
     @app.post('/api/inspector/experiments', status_code=202)
     def experiment(body: Experiment):
@@ -460,7 +460,11 @@ def create_app(operator, *, operator_key=None):
             raise HTTPException(400, 'unsupported_resource_operation')
         if body.attack not in ('normal', 'intruder', 'forged-headers', 'invalid-jwt', 'missing-jwt', 'hr-burst', 'pe-outage', 'authz-outage', 'audit-outage', 'plaintext', 'direct-frontend'):
             raise HTTPException(400, 'unsupported_experiment')
-        return submit(lambda: operator.perform(body))
+        def run():
+            result = operator.perform(body)
+            publish_inspector(result)
+            return result
+        return submit(run)
 
     return app
 
